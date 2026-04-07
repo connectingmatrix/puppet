@@ -1,4 +1,4 @@
-import { clickPoint, dragPoint, insertText, scrollPoint, sendChord, sendKey } from '@/src/background/input-work';
+import { clickPoint, dragPoint, insertText, movePoint, scrollPoint, sendChord, sendKey } from '@/src/background/input-work';
 import { runPageDomAction } from '@/src/background/page-dom-work';
 import { readPageTarget } from '@/src/background/page-target-read';
 import { runFrameScript } from '@/src/background/page-script-work';
@@ -17,7 +17,13 @@ export const runUserAction = async (tabId: number, action: PageAction) => {
     if (action.type === 'click') {
         const target = await readTarget(tabId, action);
         if (!target.found) throw new Error(`No element matches ${action.selector || ''}`);
-        await clickPoint(tabId, target.x || 0, target.y || 0, action.button || 'left');
+        await clickPoint(tabId, target.x || 0, target.y || 0, action.button || 'left', action.clickCount || 1);
+        return target;
+    }
+    if (action.type === 'hover') {
+        const target = await readTarget(tabId, action);
+        if (!target.found) throw new Error(`No element matches ${action.selector || ''}`);
+        await movePoint(tabId, target.x || 0, target.y || 0);
         return target;
     }
     if (action.type === 'type_text') {

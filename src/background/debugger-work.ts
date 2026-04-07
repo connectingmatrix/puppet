@@ -1,4 +1,5 @@
 import { ensureDebugEvents } from '@/src/background/debug-live-work';
+import { ensureNetworkEvents } from '@/src/background/network-event-work';
 import { ensureInterceptWork } from '@/src/background/intercept-work';
 import { ScreenSize } from '@/src/shared/remote-types';
 
@@ -9,6 +10,7 @@ const readTarget = (tabId: number) => ({ tabId });
 
 export const ensureDebugTab = async (tabId: number) => {
     ensureDebugEvents();
+    ensureNetworkEvents();
     ensureInterceptWork();
     if (!attached.has(tabId)) {
         await chrome.debugger.attach(readTarget(tabId), version);

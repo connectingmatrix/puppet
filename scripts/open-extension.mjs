@@ -16,6 +16,13 @@ const readSavedUrl = async () => {
 const saveUrl = async (extensionUrl) => {
     await writeFile(configPath, JSON.stringify({ extensionUrl }, null, 2));
 };
+const readOpenUrl = (extensionUrl) => {
+    const url = new URL(extensionUrl);
+    const server = new URL(serverUrl);
+    if (server.port) url.searchParams.set('port', server.port);
+    url.searchParams.set('server', serverUrl);
+    return `${url}`;
+};
 
 const readServerUrl = async () => {
     try {
@@ -55,5 +62,5 @@ if (!extensionUrl) {
     process.exit(1);
 }
 
-const [command, args] = readCommand(extensionUrl);
+const [command, args] = readCommand(readOpenUrl(extensionUrl));
 spawn(command, args, { stdio: 'inherit' });

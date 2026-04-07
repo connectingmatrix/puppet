@@ -1,11 +1,12 @@
 import { closeDebugTab, ensureDebugTab } from '@/src/background/debugger-work';
+import { runPageEval } from '@/src/background/page-eval-work';
 import { uploadFiles } from '@/src/background/file-upload-work';
 import { watchGraphql } from '@/src/background/graphql-wait';
 import { dropInterceptRules } from '@/src/background/intercept-work';
 import { readPageHtmlTarget } from '@/src/background/page-html-read';
 import { waitForLoadState } from '@/src/background/page-load-work';
 import { runPageDomAction } from '@/src/background/page-dom-work';
-import { runPageScript } from '@/src/background/page-script-read';
+import { readPageScriptResult, runPageScript } from '@/src/background/page-script-read';
 import { runFrameScript } from '@/src/background/page-script-work';
 import { runUserAction } from '@/src/background/page-user-run';
 import { waitForPageTarget } from '@/src/background/page-wait-read';
@@ -82,7 +83,8 @@ export const runPageAction = async (tabId: number, action) => {
     if (action.type === 'upload_files') return uploadFiles(tabId, action.selector || '', action.index || 0, action.files || []);
     if (action.type === 'wait_for_selector') return runFrameScript(tabId, action.frameId || 0, waitForPageTarget, [action.selector || '', action.index || 0, Boolean(action.visible), action.timeoutMs || 30000, 200]);
     if (action.type === 'get_page_html') return runFrameScript(tabId, action.frameId || 0, readPageHtmlTarget, [action.selector || 'html', action.index || 0]);
-    if (action.type === 'execute_script') return runFrameScript(tabId, action.frameId || 0, runPageScript, [action.script || '', action.args || []]);
+    if (action.type === 'execute_script' && !(action.frameId || 0)) return runPageEval(tabId, action.script || '', action.args || []);
+    if (action.type === 'execute_script') return readPageScriptResult(await runFrameScript(tabId, action.frameId || 0, runPageScript, [action.script || '', action.args || []]));
     if (action.type === 'submit') return runFrameScript(tabId, action.frameId || 0, runPageDomAction, [action]);
     const data = await runUserAction(tabId, action);
     if (action.waitUntil) await waitForLoadState(tabId, action.waitUntil, action.frameId || 0);

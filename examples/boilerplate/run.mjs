@@ -1,7 +1,7 @@
 import server from 'ctm-puppet';
 
-const browser = await server.start({ port: 4017 });
-if (!browser) throw new Error('Please open the CTM Puppet Extension in new tab.');
+const { browser, status } = await server.start({ port: 4017 });
+if (!browser) throw new Error(`CTM Puppet not ready: ${status}. Please open the CTM Puppet Extension in new tab.`);
 const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html', { waitUntil: 'load' });
 page.on('console', (event) => console.log('PAGE LOG:', event.text()));
 await page.locator("::-p-aria(Search)").fill('gamma');

@@ -19,8 +19,12 @@ Workflow:
    `skills/CTM-puppet/scripts/start_ctm_puppet.sh chrome-extension://efnpdobifdpehhodkecgddbplgkkeogo/sidepanel.html`
 2. For another Chrome instance use a custom port:
    `skills/CTM-puppet/scripts/start_ctm_puppet.sh chrome-extension://efnpdobifdpehhodkecgddbplgkkeogo/sidepanel.html 4021`
-3. Keep the extension page open until `GET http://127.0.0.1:4017/api/instances` or the matching custom-port URL shows a connected instance.
-4. For persistent work call `POST /api/pages/open`, keep the returned `sessionId` and `pageId`s, then use:
+3. Treat the port state explicitly:
+- if `GET /api/health` fails, the server is down
+- if `GET /api/health` works and `GET /api/instances` is empty, the server is ready but no extension page is bound yet
+- if `GET /api/instances` has an item, the server is connected
+4. Keep the extension page open until `GET http://127.0.0.1:4017/api/instances` or the matching custom-port URL shows a connected instance.
+5. For persistent work call `POST /api/pages/open`, keep the returned `sessionId` and `pageId`s, then use:
 - `POST /api/pages/actions`
 - `POST /api/pages/data`
 - `POST /api/pages/diff`
@@ -29,24 +33,34 @@ Workflow:
 - `POST /api/pages/screenshot`
 - `POST /api/pages/run`
 - `POST /api/pages/close`
-5. For one-shot compare flows you can still use:
+6. For one-shot compare flows you can still use:
 - `POST /api/compare/pages`
 - `POST /api/compare/selector`
 - `POST /api/inspect/selector`
 
 SDK shape:
 - `import server from 'ctm-puppet'`
-- `const browser = await server.start({ port: 4017 })`
-- `if (!browser) throw new Error('Please open the CTM Puppet Extension in new tab.')`
+- `const { browser, status, port, baseUrl, extensionUrl, instanceId } = await server.start({ port: 4017 })`
+- `if (!browser) throw new Error(\`CTM Puppet not ready: ${status}\`)`
 - `await browser.pages()` for all open browser tabs
 - `await browser.sessionPages()` for CTM Puppet session tabs only
 - `const page = await browser.newPage()`
 - `await page.goto(url)`
 - `await page.locator(selector).fill(value)`
 - `await page.waitForSelector(selector)`
+- `await page.intercept(match, { alias, mode, status, headers, body })`
+- `await page.waitForRequest('@alias')`
+- `await page.waitForResponse('@alias')`
+- `await page.waitForGraphql('@alias')`
+- `await page.contains(text)` and `await page.contains(selector, text)`
+- `await page.dblclick(selector)` and `await page.hover(selector)`
+- `await page.graphql(query, { variables })`
+- `await page.request({ method, url, body, auth })`
+- `await page.localStorage.get/set/remove/all()`
 - `page.on('console', msg => msg.text())`
 - `page.on('request', request => request.abort() || request.continue() || request.respond(...))`
 - `await browser.close()`
+- callback interception works during `page.reload()` and `page.goto()` without a special action queue
 
 Selector support:
 - CSS selectors
@@ -75,7 +89,8 @@ Useful files:
 
 Notes:
 - The opener resolves the extension URL from the explicit argument, `CTM_PUPPET_EXTENSION_URL`, live `/api/instances`, or `.ctm-puppet.local.json`.
-- `server.start({ port: CUSTOM_PORT })` lets you target a different CTM Puppet server for another Chrome instance.
+- `server.start({ port: CUSTOM_PORT })` returns structured port state and lets you target another CTM Puppet server for another Chrome instance.
 - `skills/CTM-puppet/scripts/start_ctm_puppet.sh EXTENSION_URL CUSTOM_PORT` starts and opens the matching port pair.
+- the opener appends `?port=` and `?server=` so each extension tab auto-binds to its own server port without manual settings changes
 - Each open extension page is a separate live instance.
 - Page sessions are in memory and disappear if the server restarts or the extension page closes.

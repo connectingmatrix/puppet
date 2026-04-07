@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { runRemoteJob } from '@/src/background/job-runner';
 import { closeAllLivePages } from '@/src/background/page-session-work';
 import { setLiveEmitter } from '@/src/background/live-event-work';
+import { runRequestResolve } from '@/src/sidepanel/state/request-resolve';
 import { readRuntimeApi } from '@/src/shared/extension-api';
 import { RemoteEvent, RemoteMessage, RemoteSettings } from '@/src/shared/remote-types';
 
@@ -32,6 +33,13 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
         const socket = socketRef.current;
         if (!socket || socket.readyState !== WebSocket.OPEN) return;
         socket.send(JSON.stringify(message));
+    };
+    const runResolve = async (message: RemoteMessage) => {
+        try {
+            send({ id: message.id, result: await runRequestResolve(message), type: 'request.resolve.result' });
+        } catch (error) {
+            send({ error: readText(error, 'Could not resolve request.'), id: message.id, type: 'request.resolve.error' });
+        }
     };
     const emit = (name: string, data: Record<string, unknown>, sessionId = '') => {
         send({ data, name, sessionId, type: 'live.event' });
@@ -99,6 +107,7 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
                 try {
                     const message = JSON.parse(event.data) as RemoteMessage;
                     if (message.type === 'instance.registered') addEntry('Instance registered on server.', 'base');
+                    if (message.type === 'request.resolve') void runResolve(message);
                     if (message.type === 'job.dispatch') {
                         jobsRef.current.push(message);
                         addEntry(`Job ${message.kind || 'inspect-selector'} received.`, 'warn');

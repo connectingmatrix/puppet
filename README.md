@@ -10,15 +10,17 @@ CTM Puppet is a Chrome extension plus local server for trusted browser control, 
 4. `npm run server`
 5. `npm run open:extension -- chrome-extension://YOUR_EXTENSION_ID/sidepanel.html`
 6. Keep the extension page open until `GET http://127.0.0.1:4017/api/instances` shows a connected item
-7. For another Chrome instance, start the server with `PORT=4021 npm run server` and use `const browser = await server.start({ port: 4021 })`
+7. For another Chrome instance, start the server with `PORT=4021 npm run server` and use `const { browser, status } = await server.start({ port: 4021 })`
+
+`npm run open:extension` now appends the target server as URL params, so each opened extension tab binds itself to that port automatically.
 
 ## SDK First
 
 ```js
 import server from 'ctm-puppet';
 
-const browser = await server.start({ port: 4017 });
-if (!browser) throw new Error('Please open the CTM Puppet Extension in new tab.');
+const { browser, status } = await server.start({ port: 4017 });
+if (!browser) throw new Error(`CTM Puppet not ready: ${status}. Please open the CTM Puppet Extension in new tab.`);
 const page = await browser.newPage();
 await page.goto('https://developer.chrome.com/', { waitUntil: 'load' });
 await page.setViewport({ width: 1080, height: 1024 });
@@ -49,11 +51,15 @@ const frames = await page.iframes();
 await page.iframe[frames[0].frameId].click('#frame-button');
 ```
 
+Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `await request.continue()` no longer deadlocks navigation.
+
 ## Main SDK Surface
 
-- `const browser = await server.start()` starts or reuses the local listener and returns the live browser object
-- `const browser = await server.start({ port: 4021 })` targets another CTM Puppet server port
-- if no extension page is connected, `server.start()` returns `null`
+- `const { browser, status, port, baseUrl, extensionUrl, instanceId } = await server.start()` starts or reuses the local listener
+- `const { browser, status } = await server.start({ port: 4021 })` targets another CTM Puppet server port
+- `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
+- if `browser` is `null`, the server is healthy but no extension page is bound yet
+- extension pages opened through `npm run open:extension` or the skill launcher bind to their own `?port=` / `?server=` URL params instead of sharing one manual setting
 - `await browser.newPage(url?, options?)`
 - `await browser.pages()` returns all open browser tabs bound as CTM Puppet pages
 - `await browser.sessionPages()` returns only pages opened in the current CTM Puppet session
@@ -63,9 +69,16 @@ await page.iframe[frames[0].frameId].click('#frame-button');
 - `await page.setViewport({ width, height })`
 - `await page.setRequestInterception(true | false)`
 - `page.on('console' | 'request' | 'navigation' | 'network.request', handler)`
+- `await page.intercept(match, { alias, mode, status, headers, body })`
+- `await page.waitForRequest(match, options?)`
+- `await page.waitForResponse(match, options?)`
+- `await page.waitForGraphql(aliasOrOperationName, options?)`
 - `page.locator(selector)`
+- `await page.contains(text)` and `await page.contains(selector, text)`
 - `await page.waitForSelector(selector, options?)`
 - `await page.click(selector, options?)`
+- `await page.dblclick(selector, options?)`
+- `await page.hover(selector, options?)`
 - `await page.type(selector, value, options?)`
 - `await page.keyboard.press(key, options?)`
 - `await page.select(selector, value, options?)`
@@ -73,6 +86,9 @@ await page.iframe[frames[0].frameId].click('#frame-button');
 - `await page.scroll(options?)`
 - `await page.submit(selector, options?)`
 - `await page.evaluate(scriptOrFunction, ...args)`
+- `await page.request({ method, url, headers, body, auth })`
+- `await page.graphql(query, { variables, url, auth })`
+- `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
 - `await page.data(selector, { snapshot })`
 - `await page.screenshot({ selector, fullPage, path })`
@@ -110,6 +126,19 @@ Utility routes:
 Live socket:
 - `ws://127.0.0.1:4017/api/live`
 
+## Status-First Startup
+
+```js
+const state = await server.start({ port: 4017 });
+if (!state.browser) throw new Error(`CTM Puppet not ready: ${state.status}`);
+const { browser } = state;
+```
+
+Status meanings:
+- `connected`: server is healthy and a CTM Puppet extension page is bound to that port
+- `server_ready_no_instance`: server is already running but no extension page is bound yet
+- `server_started_no_instance`: this call started the server, but no extension page is bound yet
+
 ## Open Pages
 
 ```json
@@ -128,8 +157,8 @@ Actions passed to `POST /api/pages/open` may use `role` instead of `pageId`.
 `browser.pages()` returns all normal browser tabs that the connected extension can see, and each item is already bindable with a `pageId`.
 
 ```js
-const browser = await server.start({ port: 4017 });
-if (!browser) throw new Error('Please open the CTM Puppet Extension in new tab.');
+const { browser, status } = await server.start({ port: 4017 });
+if (!browser) throw new Error(`CTM Puppet not ready: ${status}`);
 const pages = await browser.pages();
 for (const page of pages) {
   console.log({
@@ -164,6 +193,56 @@ Returned page fields:
     { "type": "scroll", "pageId": "PAGE_ID", "deltaY": 900 }
   ]
 }
+```
+
+## Network Waits And Static Mocks
+
+```js
+await page.intercept({ operationName: 'listWorkflowCatalog', urlPattern: '*graphql*' }, { alias: 'listWorkflowCatalog' });
+await page.intercept({ operationName: 'workflowRunningStatuses', urlPattern: '*graphql*' }, {
+  body: { data: { workflowRunningStatuses: [] } },
+  mode: 'fulfill',
+  status: 200
+});
+const request = await page.waitForRequest('@listWorkflowCatalog');
+const response = await page.waitForGraphql('@listWorkflowCatalog');
+console.log(request.method, request.url, response.status);
+```
+
+Matches can be:
+- `@alias`
+- `{ method, urlPattern, resourceType, operationName, status }`
+
+`waitForGraphql()` waits on response events and works with either a saved alias or a raw GraphQL operation name.
+
+## Query Helpers
+
+```js
+const row = await page.contains('[data-cy^="workflow-record-user-"]', 'My Workflow');
+const button = await row.closest('[data-cy^="workflow-record-user-"]');
+const menu = await button.find('.menu-trigger');
+await menu.click();
+const text = await page.locator('.title').text();
+const count = await page.locator('[data-cy^="tree-row-"]').count();
+const height = await page.locator('.canvas').outerHeight();
+const checked = await page.locator("input[type='checkbox']").checked();
+const href = await page.url();
+const pathname = await page.location('pathname');
+```
+
+## Session Helpers
+
+```js
+const accessToken = await page.localStorage.get('giga_access_token');
+await page.localStorage.set('workflow_catalog_selected_org_ids', JSON.stringify(['org-1']));
+const payload = await page.graphql('query Me { gigaCurrentUser { id } }');
+const response = await page.request({
+  auth: 'auto-from-current-session',
+  method: 'POST',
+  url: '/api/v2/graphql',
+  body: { query: 'query Ping { __typename }' }
+});
+console.log(accessToken, payload.data, response.status);
 ```
 
 ## Action Reference
@@ -221,7 +300,7 @@ Supported selector syntax:
 ```json
 {
   "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "load" }],
-  "script": "const browser = await server.start({ port: 4017 }); if (!browser) throw new Error('Please open the CTM Puppet Extension in new tab.'); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.data('#search', { snapshot: true });",
+  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`CTM Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.data('#search', { snapshot: true });",
   "closeOnExit": true
 }
 ```

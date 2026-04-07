@@ -1,4 +1,5 @@
 import { sendDebug } from '@/src/background/debugger-work';
+import { readGraphqlName } from '@/src/background/graphql-name';
 import { emitLive } from '@/src/background/live-event-work';
 import { PageAction } from '@/src/shared/page-action';
 
@@ -20,7 +21,9 @@ const matchUrl = (pattern = '', url = '') => {
 };
 const matchRule = (action: PageAction, params: chrome.debugger.DebuggeeEvent['params']) => {
     const match = action.match || {};
+    const body = `${params.request.postData || ''}`;
     if (match.method && match.method !== params.request.method) return false;
+    if (match.operationName && match.operationName !== readGraphqlName(body)) return false;
     if (match.resourceTypes && match.resourceTypes.length && !match.resourceTypes.includes((params.resourceType || '').toLowerCase())) return false;
     return matchUrl(match.urlPattern || '*', params.request.url || '');
 };
@@ -78,7 +81,16 @@ export const ensureInterceptWork = () => {
         const page = active.get(tabId);
         if (page) {
             pending.set(params.requestId, { pageId: page.pageId, tabId });
-            emitLive('request', { method: params.request.method || '', pageId: page.pageId, requestId: params.requestId, resourceType: params.resourceType || '', url: params.request.url || '' }, page.sessionId);
+            emitLive('request', {
+                body: `${params.request.postData || ''}`,
+                headers: params.request.headers || {},
+                method: params.request.method || '',
+                operationName: readGraphqlName(`${params.request.postData || ''}`),
+                pageId: page.pageId,
+                requestId: params.requestId,
+                resourceType: params.resourceType || '',
+                url: params.request.url || ''
+            }, page.sessionId);
             return;
         }
         const rule = (rules.get(tabId) || []).find((item) => matchRule(item, params));

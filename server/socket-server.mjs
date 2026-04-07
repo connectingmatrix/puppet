@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
-import { addInstanceEvent, createJob, disconnectInstance, heartbeatInstance, registerInstance, resolveJob, touchJob } from './store.mjs';
+import { dropLiveCommands, resolveLiveCommand, saveLiveCommand } from './live-command-store.mjs';
 import { addSubscriber, dropSubscriber, emitLive, readLivePage, syncLiveEvent, updateSubscriber } from './live-store.mjs';
+import { addInstanceEvent, createJob, disconnectInstance, heartbeatInstance, registerInstance, resolveJob, sendInstanceMessage, touchJob } from './store.mjs';
 
 const readMessage = (value) => {
     try {
@@ -21,6 +22,7 @@ const readActionInstance = (actions = []) => {
     }
     return '';
 };
+const readResolvePage = (message) => readLivePage(message.payload && `${message.payload.pageId || ''}` || '');
 
 export const attachSocketServer = (server) => {
     const extensionSocket = new WebSocketServer({ noServer: true });
@@ -44,13 +46,21 @@ export const attachSocketServer = (server) => {
             if (message.type === 'job.progress') touchJob(message.jobId || '', message.progress || '');
             if (message.type === 'job.result') resolveJob(message.jobId || '', true, message.result || {});
             if (message.type === 'job.error') resolveJob(message.jobId || '', false, { error: message.error || 'Remote job failed.' });
+            if (message.type === 'request.resolve.result') resolveLiveCommand(message.id || '', message.result || {});
+            if (message.type === 'request.resolve.error') resolveLiveCommand(message.id || '', {}, message.error || 'Could not resolve request.');
             if (message.type === 'live.event') {
                 if (instanceId) addInstanceEvent(instanceId, `${message.name || 'event'} received.`, message.name === 'action.failed' ? 'danger' : 'warn');
                 syncLiveEvent(message.name || 'event', message.data || {}, message.sessionId || '');
             }
         });
-        socket.on('close', () => { if (instanceId) disconnectInstance(instanceId, 'Socket closed.'); });
-        socket.on('error', () => { if (instanceId) disconnectInstance(instanceId, 'Socket error.'); });
+        socket.on('close', () => {
+            dropLiveCommands(null, instanceId, 'Extension disconnected.');
+            if (instanceId) disconnectInstance(instanceId, 'Socket closed.');
+        });
+        socket.on('error', () => {
+            dropLiveCommands(null, instanceId, 'Extension disconnected.');
+            if (instanceId) disconnectInstance(instanceId, 'Socket error.');
+        });
     });
     liveSocket.on('connection', (socket) => {
         let subscriberId = addSubscriber(socket);
@@ -58,6 +68,14 @@ export const attachSocketServer = (server) => {
             const message = readMessage(value);
             if (!message || !message.type) return;
             if (message.type === 'subscribe') return updateSubscriber(subscriberId, message.sessionId || '');
+            if (message.type === 'request.resolve') {
+                const id = message.id || crypto.randomUUID();
+                const page = readResolvePage(message);
+                if (!page) return send(socket, { error: `No active page matches ${message.payload && message.payload.pageId || ''}`, id, type: 'request.resolve.error' });
+                saveLiveCommand(id, socket, page.instanceId || '');
+                if (sendInstanceMessage(page.instanceId || '', { id, payload: message.payload || {}, type: 'request.resolve' }, 'Request resolve dispatched.')) return;
+                return resolveLiveCommand(id, {}, 'No active extension instance is connected.');
+            }
             if (message.type !== 'actions.run') return;
             try {
                 const result = await createJob('pages-actions', { actions: message.actions || [] }, readActionInstance(message.actions || []), Number(message.timeoutMs) || 45000);
@@ -66,7 +84,13 @@ export const attachSocketServer = (server) => {
                 send(socket, { error: error.message, type: 'actions.failed' });
             }
         });
-        socket.on('close', () => dropSubscriber(subscriberId));
-        socket.on('error', () => dropSubscriber(subscriberId));
+        socket.on('close', () => {
+            dropLiveCommands(socket, '', 'Live socket closed.');
+            dropSubscriber(subscriberId);
+        });
+        socket.on('error', () => {
+            dropLiveCommands(socket, '', 'Live socket closed.');
+            dropSubscriber(subscriberId);
+        });
     });
 };

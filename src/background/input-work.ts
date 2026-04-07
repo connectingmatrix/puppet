@@ -3,11 +3,18 @@ import { readKeyData } from '@/src/background/key-read';
 
 const readButton = (button: string) => button === 'middle' ? 'middle' : button === 'right' ? 'right' : 'left';
 
-export const clickPoint = async (tabId: number, x: number, y: number, button = 'left') => {
+export const movePoint = async (tabId: number, x: number, y: number, button = 'left') => {
     const next = readButton(button);
     await sendDebug(tabId, 'Input.dispatchMouseEvent', { button: next, clickCount: 1, type: 'mouseMoved', x, y });
-    await sendDebug(tabId, 'Input.dispatchMouseEvent', { button: next, clickCount: 1, type: 'mousePressed', x, y });
-    await sendDebug(tabId, 'Input.dispatchMouseEvent', { button: next, clickCount: 1, type: 'mouseReleased', x, y });
+};
+
+export const clickPoint = async (tabId: number, x: number, y: number, button = 'left', count = 1) => {
+    const next = readButton(button);
+    await movePoint(tabId, x, y, button);
+    for (let index = 0; index < count; index += 1) {
+        await sendDebug(tabId, 'Input.dispatchMouseEvent', { button: next, clickCount: count, type: 'mousePressed', x, y });
+        await sendDebug(tabId, 'Input.dispatchMouseEvent', { button: next, clickCount: count, type: 'mouseReleased', x, y });
+    }
 };
 
 export const dragPoint = async (tabId: number, left: { x: number; y: number }, right: { x: number; y: number }) => {

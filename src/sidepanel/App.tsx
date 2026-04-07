@@ -17,7 +17,7 @@ const App = () => {
     const [showOpenInTab, setShowOpenInTab] = useState(true);
     const marks = readStructureMarks(state.leftSnapshot.tree, state.rightSnapshot.tree);
     const remoteSocket = useRemoteSocket(remote.loading, remote.activeSettings);
-    const openInTab = () => readTabsApi().create({ url: readRuntimeApi().getURL('sidepanel.html') });
+    const openInTab = () => readTabsApi().create({ url: readRuntimeApi().getURL(`sidepanel.html${window.location.search || ''}`) });
     const saveSettings = async () => {
         const ok = await remote.save();
         if (ok) setShowSettings(false);

@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react';
 import { readRemoteSettings, saveRemoteSettings } from '@/src/shared/remote-store';
-import { RemoteSettings } from '@/src/shared/remote-types';
+import { RemoteSettings, remoteServerUrl } from '@/src/shared/remote-types';
+import { readRemoteUrlOverride } from '@/src/shared/remote-url';
 
 const emptySettings: RemoteSettings = { debugForeground: false, remoteEnabled: true, serverUrl: '', updatedAt: 0 };
+const readActive = (settings: RemoteSettings) => {
+    const serverUrl = readRemoteUrlOverride();
+    return serverUrl ? { ...settings, serverUrl } : settings;
+};
 
 export const useRemoteSettings = () => {
     const [message, setMessage] = useState('');
@@ -15,12 +20,12 @@ export const useRemoteSettings = () => {
     useEffect(() => {
         readRemoteSettings().then((next) => {
             setSettings(next);
-            setActiveSettings(next);
+            setActiveSettings(readActive(next));
             setMessage('');
             setMessageTone('base');
         }).catch((error) => {
-            setSettings((current) => ({ ...current, serverUrl: current.serverUrl || 'http://127.0.0.1:4017' }));
-            setActiveSettings((current) => ({ ...current, serverUrl: current.serverUrl || 'http://127.0.0.1:4017' }));
+            setSettings((current) => ({ ...current, serverUrl: current.serverUrl || remoteServerUrl }));
+            setActiveSettings((current) => readActive({ ...current, serverUrl: current.serverUrl || remoteServerUrl }));
             setMessage(error instanceof Error ? error.message : 'Could not load remote settings.');
             setMessageTone('danger');
         }).finally(() => {
@@ -37,8 +42,8 @@ export const useRemoteSettings = () => {
         try {
             const next = await saveRemoteSettings(settings);
             setSettings(next);
-            setActiveSettings(next);
-            setMessage('Settings saved. Reconnecting socket.');
+            setActiveSettings(readActive(next));
+            setMessage(readRemoteUrlOverride() ? 'Settings saved. This page keeps its URL-bound server.' : 'Settings saved. Reconnecting socket.');
             setMessageTone('base');
             return true;
         } catch (error) {

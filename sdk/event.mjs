@@ -1,5 +1,3 @@
-import { requestJson } from './http.mjs';
-
 export class ConsoleMessage {
     constructor(event) {
         this.event = event;
@@ -26,7 +24,7 @@ export class RequestHandle {
     }
     async send(mode, value = {}) {
         if (this.done) return true;
-        await requestJson(this.page.baseUrl, '/api/pages/actions', 'POST', { actions: [{ ...value, mode, pageId: this.page.pageId, requestId: this.event.requestId || '', type: 'resolve_request' }] });
+        await this.page.browser.live.command('request.resolve', { ...value, mode, pageId: this.page.pageId, requestId: this.event.requestId || '' });
         this.done = true;
         return true;
     }

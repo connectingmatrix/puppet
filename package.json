@@ -15,7 +15,14 @@
     "server": "node server/index.mjs",
     "open:extension": "node scripts/open-extension.mjs",
     "test:google": "node examples/google-suite.mjs",
-    "test:sample": "node examples/sample-suite.mjs"
+    "test:sample": "node examples/sample-suite.mjs",
+    "ai:init": "./.ai/bin/ai-init",
+    "ai:sync": "./.ai/bin/ai-sync",
+    "ai:memory:build": "./.ai/bin/ai-memory-build",
+    "ai:memory:latest": "./.ai/bin/ai-memory-latest",
+    "ai:repair": "./.ai/bin/ai-repair",
+    "ai:context": "./.ai/bin/ai-context",
+    "ai:context:build": "./.ai/bin/ai-context-build"
   },
   "dependencies": {
     "express": "^5.1.0",

@@ -3,3 +3,5 @@ dist
 .DS_Store
 artifacts/*.pem
 .ctm-puppet.local.json
+.ai/
+.continue/

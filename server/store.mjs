@@ -94,6 +94,14 @@ export const createJob = (kind, payload, instanceId = '', timeoutMs = 45000) => 
     });
 };
 
+export const sendInstanceMessage = (instanceId, value, text = '') => {
+    const entry = instances.get(instanceId);
+    if (!readOpen(entry)) return false;
+    if (text) pushEvent(entry, text, 'warn');
+    entry.socket.send(JSON.stringify(value));
+    return true;
+};
+
 export const touchJob = (jobId, progress = '') => {
     const job = jobs.get(jobId);
     if (!job) return false;

@@ -18,7 +18,6 @@ export const ensureDebugEvents = () => {
         const state = readSession(tabId);
         if (method === 'Network.requestWillBeSent') pending.set(tabId, (pending.get(tabId) || 0) + 1);
         if (method === 'Network.loadingFinished' || method === 'Network.loadingFailed') dropPending(tabId);
-        if (method === 'Network.requestWillBeSent' && state.page) emitLive('network.request', { pageId: state.page.pageId, method: params.request && params.request.method || '', type: params.type || '', url: params.request && params.request.url || '' }, state.sessionId);
         if (method === 'Runtime.consoleAPICalled' && state.page) {
             const parts = [];
             for (const item of params.args || []) parts.push(item.value || item.description || '');
