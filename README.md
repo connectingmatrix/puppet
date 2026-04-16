@@ -1,4 +1,4 @@
-# CTM Puppet
+# CTM Puppet - Giving AI Eyes. Pair with Codex Pro & Claude Max
 
 CTM Puppet is a Chrome extension plus local server for trusted browser control, live page sessions, DOM/style diffs, screenshots, and scriptable inspection. Every non-`/api` route returns this file as `text/markdown`, so AI clients can discover the contract from `GET /`, `GET /docs`, or any other non-API path.
 
