@@ -1,9 +1,9 @@
 {
-  "name": "ctm-puppet-boilerplate",
+  "name": "puppet-boilerplate",
   "private": true,
   "type": "module",
   "dependencies": {
-    "ctm-puppet": "file:../.."
+    "puppet": "file:../.."
   },
   "scripts": {
     "start": "node ./run.mjs"

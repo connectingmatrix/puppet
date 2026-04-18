@@ -1,13 +1,31 @@
 {
-  "name": "ctm-puppet",
+  "name": "puppet",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
+  "bin": {
+    "puppet": "./bin/puppet.mjs"
+  },
   "exports": {
     ".": "./sdk/index.mjs",
     "./browser": "./sdk/browser.mjs",
     "./server": "./sdk/server.mjs"
   },
+  "files": [
+    "artifacts/puppet.crx",
+    "bin",
+    "cli",
+    "dist",
+    "examples",
+    "public",
+    "scripts",
+    "sdk",
+    "server",
+    "sidepanel.html",
+    "skills",
+    "src",
+    "README.md"
+  ],
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",

@@ -1,27 +1,43 @@
-# CTM Puppet - Giving AI Eyes. Pair with Codex Pro & Claude Max
+# Puppet - Giving AI Eyes. Pair with Codex Pro & Claude Max
 
-CTM Puppet is a Chrome extension plus local server for trusted browser control, live page sessions, DOM/style diffs, screenshots, and scriptable inspection. Every non-`/api` route returns this file as `text/markdown`, so AI clients can discover the contract from `GET /`, `GET /docs`, or any other non-API path.
+Puppet is a Chrome extension plus local server for trusted browser control, live page sessions, DOM/style diffs, screenshots, and scriptable inspection. Every non-`/api` route returns this file as `text/markdown`, so AI clients can discover the contract from `GET /`, `GET /docs`, or any other non-API path.
 
 ## Quick Start
 
-1. `npm install`
-2. `npm run build`
-3. Load `/Users/abeer/dev/chrome_extension_utils/dist` as an unpacked Chrome extension
-4. `npm run server`
-5. For the default `4017` port, keep Chrome running; the extension background worker connects without an extension tab
-6. Only open `sidepanel.html` for a custom port, for example `npm run open:extension -- chrome-extension://YOUR_EXTENSION_ID/sidepanel.html`
-7. Check `GET http://127.0.0.1:4017/api/instances` for a connected item
-8. For another Chrome instance, start the server with `PORT=4021 npm run server` and use `const { browser, status } = await server.start({ port: 4021 })`
+1. `npm install -g /Users/abeer/dev/chrome_extension_utils`
+2. `puppet server start --port 4017`
+3. Load `/Users/abeer/dev/chrome_extension_utils/dist` as an unpacked Chrome extension once
+4. Keep Chrome running; the extension background worker connects to the default `4017` server without opening an extension tab
+5. Check `puppet instances --port 4017` for a connected item
+6. For another Chrome instance, start a custom server with `puppet server start --port 4021`
+7. Bind that custom port with `puppet extension open chrome-extension://YOUR_EXTENSION_ID/sidepanel.html --port 4021`
 
-`npm run open:extension` appends the target server as URL params, so custom-port extension tabs bind themselves to that port automatically. The default `4017` connection is owned by the extension background worker.
+The `puppet` binary is the preferred automation interface. It can start the server, call every REST endpoint, run server-side SDK scripts, and open custom-port extension pages.
+
+## CLI First
+
+```sh
+puppet help
+puppet help pages
+puppet server start --port 4017
+puppet server status --port 4017
+puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
+puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"PAGE","deltaY":800}]}'
+puppet pages data --json '{"pageId":"PAGE","selector":"body","snapshot":true}'
+puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'
+puppet run ./inspect.mjs --timeout-ms 180000
+puppet api GET /api/health
+```
+
+Request bodies can come from `--json`, `--file`, or `--stdin`. The raw API escape hatch is `puppet api METHOD /api/path`. Files passed to `puppet run` are server-side function bodies with `server`, `browser`, `args`, and `console` already in scope.
 
 ## SDK First
 
 ```js
-import server from 'ctm-puppet';
+import server from 'puppet';
 
 const { browser, status } = await server.start({ port: 4017 });
-if (!browser) throw new Error(`CTM Puppet not ready: ${status}. Please open the CTM Puppet Extension in new tab.`);
+if (!browser) throw new Error(`Puppet not ready: ${status}. Reload the installed extension or bind the custom-port extension page.`);
 const page = await browser.newPage();
 await page.goto('https://developer.chrome.com/', { waitUntil: 'load' });
 await page.setViewport({ width: 1080, height: 1024 });
@@ -57,18 +73,18 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 ## Main SDK Surface
 
 - `const { browser, status, port, baseUrl, extensionUrl, instanceId } = await server.start()` starts or reuses the local listener
-- `const { browser, status } = await server.start({ port: 4021 })` targets another CTM Puppet server port
+- `const { browser, status } = await server.start({ port: 4021 })` targets another Puppet server port
 - `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
 - if `browser` is `null`, the server is healthy but no extension instance has registered yet
-- `server.stop()` only clears the local SDK browser binding; it does not stop the shared CTM Puppet listener
+- `server.stop()` only clears the local SDK browser binding; it does not stop the shared Puppet listener
 - use `server.stop({ force: true })` only when you intentionally want to kill a listener started by this SDK process
 - default-port automation does not require an extension page; the background worker registers itself with the server
-- extension pages opened through `npm run open:extension` or the skill launcher are only needed for custom-port binding
+- extension pages opened through `puppet extension open` or the skill launcher are only needed for custom-port binding
 - the opener does not create a new extension tab when the target server already has a connected instance
-- `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
+- `await browser.newPage(url?, options?)` reuses the latest Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
-- `await browser.pages()` returns all open browser tabs bound as CTM Puppet pages
-- `await browser.sessionPages()` returns only pages opened in the current CTM Puppet session
+- `await browser.pages()` returns all open browser tabs bound as Puppet pages
+- `await browser.sessionPages()` returns only pages opened in the current Puppet session
 - `await browser.close()`
 - `await page.goto(url, options?)`
 - `await page.reload(options?)`
@@ -136,12 +152,12 @@ Live socket:
 
 ```js
 const state = await server.start({ port: 4017 });
-if (!state.browser) throw new Error(`CTM Puppet not ready: ${state.status}`);
+if (!state.browser) throw new Error(`Puppet not ready: ${state.status}`);
 const { browser } = state;
 ```
 
 Status meanings:
-- `connected`: server is healthy and a CTM Puppet extension instance is bound to that port
+- `connected`: server is healthy and a Puppet extension instance is bound to that port
 - `server_ready_no_instance`: server is already running but no extension instance has registered yet
 - `server_started_no_instance`: this call started the server, but no extension instance has registered yet
 
@@ -164,7 +180,7 @@ Actions passed to `POST /api/pages/open` may use `role` instead of `pageId`.
 
 ```js
 const { browser, status } = await server.start({ port: 4017 });
-if (!browser) throw new Error(`CTM Puppet not ready: ${status}`);
+if (!browser) throw new Error(`Puppet not ready: ${status}`);
 const pages = await browser.pages();
 for (const page of pages) {
   console.log({
@@ -194,7 +210,7 @@ Returned page fields:
 {
   "actions": [
     { "type": "wait_for_selector", "pageId": "PAGE_ID", "selector": "textarea[name='q']", "visible": true, "timeoutMs": 30000 },
-    { "type": "type_text", "pageId": "PAGE_ID", "selector": "textarea[name='q']", "value": "ctm puppet chrome extension", "clearFirst": true },
+    { "type": "type_text", "pageId": "PAGE_ID", "selector": "textarea[name='q']", "value": "puppet browser automation", "clearFirst": true },
     { "type": "click", "pageId": "PAGE_ID", "selector": "[role='option']", "index": 1, "waitUntil": "networkidle2" },
     { "type": "scroll", "pageId": "PAGE_ID", "deltaY": 900 }
   ]
@@ -308,7 +324,7 @@ Supported selector syntax:
 ```json
 {
   "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "load" }],
-  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`CTM Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.data('#search', { snapshot: true });",
+  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.data('#search', { snapshot: true });",
   "closeOnExit": true
 }
 ```
@@ -341,8 +357,10 @@ Response keys:
 - `/examples/compare-right.html`
 
 Runnable examples:
-- `npm run test:google`
-- `npm run test:sample`
+- `puppet run /Users/abeer/dev/chrome_extension_utils/examples/puppet-run.mjs --timeout-ms 180000`
+- `node /Users/abeer/dev/chrome_extension_utils/examples/google-suite.mjs`
+- `node /Users/abeer/dev/chrome_extension_utils/examples/sample-suite.mjs`
+- `/Users/abeer/dev/chrome_extension_utils/examples/puppet-run.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/google-suite.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/sample-suite.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/boilerplate/run.mjs`
@@ -364,8 +382,8 @@ The Google suite does this:
 - Each Chrome profile broadcasts one stable `browserId`, and a server keeps one active instance per browser id
 - The default `4017` connection is a background-worker instance, so relaunching the server does not require reopening `sidepanel.html`
 - Each registration includes a stable `browserId`, and the server keeps only one connected instance per browser id
-- `browser.newPage()` reuses the latest CTM Puppet-controlled tab by default; across separate Codex script runs it first binds an existing browser tab, then navigates that tab
+- `browser.newPage()` reuses the latest Puppet-controlled tab by default; across separate Codex script runs it first binds an existing browser tab, then navigates that tab
 - use `{ newTab: true }` for intentional multi-page comparisons
 - Page sessions are in memory and disappear if the server restarts or the owning extension instance disconnects
 - Custom-port extension pages must stay open while SDK or REST work is running on that custom port
-- The packaged extension artifact is `/Users/abeer/dev/chrome_extension_utils/artifacts/ctm-puppet.crx`
+- The packaged extension artifact is `/Users/abeer/dev/chrome_extension_utils/artifacts/puppet.crx`

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "CTM Puppet",
+  "name": "Puppet",
   "version": "0.1.0",
   "key": "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA55mgyoRJtoHwW6b6JUbjeIJzmUEkmnRYtfQnk0tIL1HXPh82zd7x22GDtR2e1gilrHVyhcCX+RaMN2KQfhGZGx9merAJrDW9hbA+uWaXgzP8mxdroBLHBAIbePlMcEHBaH0gKk23xxDxNrN0jqJ3h38i5odde5vllOxzZRrBOj2J1yanTAGGDJtYW5DfE3K3lX2hvriiem45QHeGlXPWL/Y3EeuBv/io9xyA0mbZjj79aOe2HRxw2vB6/EqBJkCJODp8YxGS8Vs7r2ZQ5O1QILSOYmz7FdYXqYq1mJUMlvuClMy9nazkqEn2BDrd+Pnn6mQMdUw3IFK7zAaNBUGSmWe07I5aYP51JRiz5dENbX7nWu5blG6W0RjcrFog0dpNVH9y8Gc1I8ujMl3bVi1hQKPTtSfRxa1eHp3m+pv4C+YNL+YBzf83ELmfP8o5wGV/yH9LkFXoHf00UGhq7BpN6GM2QHshOpzqeP3htlSj4Er6bMT2HiS4I79NuuMcgknmZQQZbnY159xpOeukfOQKkG882hZBHL0ifORZ/m0m133wPHxgwvKHidFfxZYpFVNqCgIb0f0b86BjK6uhv49jXLoMHMTLXB8iasHLlIee7+mjuiAfPE7jAi8a66oZ94ZeMqghjlKCPwaUD8mxPQmUDRYCJYK/vmSpOu4a7jNnyMMCAwEAAQ==",
   "description": "Trusted browser control, live page sessions, and DOM/style inspection across one or two pages.",
@@ -11,7 +11,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Open CTM Puppet"
+    "default_title": "Open Puppet"
   },
   "web_accessible_resources": [
     {

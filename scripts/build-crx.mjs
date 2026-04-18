@@ -3,8 +3,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
 
-const keyPath = 'artifacts/ctm-puppet.pem';
-const crxPath = 'artifacts/ctm-puppet.crx';
+const keyPath = 'artifacts/puppet.pem';
+const crxPath = 'artifacts/puppet.crx';
 
 const run = (command, args) => new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: 'inherit', shell: process.platform === 'win32' });

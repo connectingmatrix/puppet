@@ -90,6 +90,6 @@ const connect = async () => {
 
 export const startRemoteSocketWorker = () => {
     void connect();
-    chrome.alarms.create('ctm-puppet-socket', { periodInMinutes: 1 });
-    chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === 'ctm-puppet-socket') void connect(); });
+    chrome.alarms.create('puppet-socket', { periodInMinutes: 1 });
+    chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === 'puppet-socket') void connect(); });
 };

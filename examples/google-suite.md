@@ -1,6 +1,6 @@
 # Google Sample Suite
 
-This suite tests CTM Puppet against `google.com` using the live REST API.
+This suite tests Puppet against `google.com` using the live REST API.
 
 ## 1. Open One Live Page
 
@@ -24,7 +24,7 @@ curl -s -X POST http://127.0.0.1:4017/api/pages/actions \
   --data '{
     "actions": [
       { "type": "wait_for_selector", "pageId": "PAGE_ID", "selector": "textarea[name='\''q'\'']", "visible": true, "timeoutMs": 30000 },
-      { "type": "type_text", "pageId": "PAGE_ID", "selector": "textarea[name='\''q'\'']", "value": "ctm puppet chrome extension", "clearFirst": true },
+      { "type": "type_text", "pageId": "PAGE_ID", "selector": "textarea[name='\''q'\'']", "value": "puppet browser automation", "clearFirst": true },
       { "type": "wait_for_selector", "pageId": "PAGE_ID", "selector": "[role='\''listbox'\'']", "visible": true, "timeoutMs": 30000 },
       { "type": "click", "pageId": "PAGE_ID", "selector": "[role='\''option'\'']", "index": 1, "waitUntil": "networkidle2" },
       { "type": "wait_for_selector", "pageId": "PAGE_ID", "selector": "#search, #center_col, a h3", "visible": true, "timeoutMs": 30000 }

@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 
-const configPath = new URL('../.ctm-puppet.local.json', import.meta.url);
-const serverUrl = process.env.CTM_PUPPET_SERVER_URL || 'http://127.0.0.1:4017';
+const configPath = new URL('../.puppet.local.json', import.meta.url);
+const serverUrl = process.env.PUPPET_SERVER_URL || 'http://127.0.0.1:4017';
 
 const readSavedUrl = async () => {
     try {
@@ -48,7 +48,7 @@ const readConnectedInstance = async () => {
 };
 
 const readExtensionUrl = async () => {
-    const provided = process.argv[2] || process.env.CTM_PUPPET_EXTENSION_URL || '';
+    const provided = process.argv[2] || process.env.PUPPET_EXTENSION_URL || '';
     if (provided) {
         await saveUrl(provided);
         return provided;
@@ -69,14 +69,14 @@ const readCommand = (extensionUrl) => {
 
 const extensionUrl = await readExtensionUrl();
 if (!extensionUrl) {
-    console.error('No extension URL is known. Pass it as the first argument or set CTM_PUPPET_EXTENSION_URL.');
+    console.error('No extension URL is known. Pass it as the first argument or set PUPPET_EXTENSION_URL.');
     process.exit(1);
 }
 
-const connected = process.env.CTM_PUPPET_OPEN_ALWAYS ? null : await readConnectedInstance();
+const connected = process.env.PUPPET_OPEN_ALWAYS ? null : await readConnectedInstance();
 if (connected) {
     await saveUrl(connected.extensionUrl || extensionUrl);
-    console.log(`CTM Puppet extension already connected for ${serverUrl}.`);
+    console.log(`Puppet extension already connected for ${serverUrl}.`);
     process.exit(0);
 }
 
