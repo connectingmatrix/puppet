@@ -44,7 +44,7 @@ SDK shape:
 - `if (!browser) throw new Error(\`CTM Puppet not ready: ${status}\`)`
 - `await browser.pages()` for all open browser tabs
 - `await browser.sessionPages()` for CTM Puppet session tabs only
-- `const page = await browser.newPage()` reuses the latest CTM Puppet page by default
+- `const page = await browser.newPage()` reuses the latest CTM Puppet page by default and binds an existing browser tab first when a new script process has no session memory
 - `const page = await browser.newPage(url, { newTab: true })` only when a fresh tab is intentional
 - `await page.goto(url)`
 - `await page.locator(selector).fill(value)`
@@ -96,6 +96,6 @@ Notes:
 - `skills/CTM-puppet/scripts/start_ctm_puppet.sh EXTENSION_URL CUSTOM_PORT` starts and opens the matching port pair.
 - the opener appends `?port=` and `?server=` so each extension tab auto-binds to its own server port without manual settings changes
 - Each open extension page is a separate live instance.
-- `browser.newPage()` reuses an existing controlled page by default to avoid tab buildup during repeated Codex automation.
+- `browser.newPage()` reuses an existing controlled page by default; across repeated Codex automation processes it binds an already-open browser tab before opening anything new.
 - Use `{ newTab: true }` for intentional multi-page comparisons.
 - Page sessions are in memory and disappear if the server restarts or the extension page closes.

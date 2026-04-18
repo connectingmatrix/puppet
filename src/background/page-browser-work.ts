@@ -9,7 +9,7 @@ const bindTab = async (instanceId: string, tab: chrome.tabs.Tab) => {
     const tabId = tab.id || 0;
     const current = readTabPage(tabId);
     const stats = await readPageStats(tabId);
-    const values = { height: tab.height || 0, instanceId, pageName: tab.title || '', pageStats: stats, pageUrl: tab.url || '', status: 'ready', tabId, title: tab.title || '', url: tab.url || '', width: tab.width || 0 };
+    const values = { active: Boolean(tab.active), height: tab.height || 0, index: tab.index || 0, instanceId, pageName: tab.title || '', pageStats: stats, pageUrl: tab.url || '', status: 'ready', tabId, title: tab.title || '', url: tab.url || '', width: tab.width || 0, windowId: tab.windowId || 0 };
     if (current) return readPublicPage(saveTabPage(tabId, values) as LivePage);
     const page = saveLivePage({ ...values, pageId: crypto.randomUUID(), recordingIds: [], role: 'browser', sessionId: '' } as LivePage);
     return readPublicPage(page as LivePage);
@@ -22,6 +22,6 @@ export const listBrowserPages = async (instanceId: string) => {
         if (!(tab.id && keepTab(tab.url || ''))) continue;
         items.push(await bindTab(instanceId, tab));
     }
-    items.sort((left, right) => `${left.pageName || ''}`.localeCompare(`${right.pageName || ''}`));
+    items.sort((left, right) => Number(right.active) - Number(left.active) || `${left.pageName || ''}`.localeCompare(`${right.pageName || ''}`));
     return items;
 };

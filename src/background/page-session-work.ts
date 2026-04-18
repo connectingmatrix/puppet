@@ -14,7 +14,7 @@ const readPage = (pageId: string) => {
     if (!page) throw new Error(`No active page matches ${pageId}`);
     return page;
 };
-export const readPublicPage = (page: LivePage) => ({ height: page.height, instanceId: page.instanceId, pageId: page.pageId, pageName: page.pageName, pageStats: page.pageStats, pageUrl: page.pageUrl, recordingIds: [...page.recordingIds], role: page.role, sessionId: page.sessionId, status: page.status, tabId: page.tabId || 0, title: page.title, url: page.url, width: page.width });
+export const readPublicPage = (page: LivePage) => ({ active: Boolean(page.active), height: page.height, index: page.index || 0, instanceId: page.instanceId, pageId: page.pageId, pageName: page.pageName, pageStats: page.pageStats, pageUrl: page.pageUrl, recordingIds: [...page.recordingIds], role: page.role, sessionId: page.sessionId, status: page.status, tabId: page.tabId || 0, title: page.title, url: page.url, width: page.width, windowId: page.windowId || 0 });
 const readMeta = async (pageId: string, status = 'ready') => {
     const page = readPage(pageId);
     const meta = await readTabMeta(page.tabId || 0);

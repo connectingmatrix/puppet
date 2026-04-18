@@ -16,7 +16,9 @@ export interface PageStats {
 }
 
 export interface LivePage {
+    active?: boolean;
     height: number;
+    index?: number;
     instanceId: string;
     pageId: string;
     pageName: string;
@@ -30,6 +32,7 @@ export interface LivePage {
     title: string;
     url: string;
     width: number;
+    windowId?: number;
 }
 
 export interface OpenPagesPayload {

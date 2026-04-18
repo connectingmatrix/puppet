@@ -60,7 +60,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
 - if `browser` is `null`, the server is healthy but no extension page is bound yet
 - extension pages opened through `npm run open:extension` or the skill launcher bind to their own `?port=` / `?server=` URL params instead of sharing one manual setting
-- `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default
+- `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
 - `await browser.pages()` returns all open browser tabs bound as CTM Puppet pages
 - `await browser.sessionPages()` returns only pages opened in the current CTM Puppet session
@@ -357,7 +357,7 @@ The Google suite does this:
 ## Notes
 
 - Each open extension page is a separate live instance
-- `browser.newPage()` reuses the latest CTM Puppet-controlled tab by default to avoid tab buildup during repeated Codex runs
+- `browser.newPage()` reuses the latest CTM Puppet-controlled tab by default; across separate Codex script runs it first binds an existing browser tab, then navigates that tab
 - use `{ newTab: true }` for intentional multi-page comparisons
 - Page sessions are in memory and disappear if the server restarts or the extension page closes
 - The extension page must stay open while SDK or REST work is running

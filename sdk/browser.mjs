@@ -34,7 +34,9 @@ export class Browser {
     async newPage(url = 'about:blank', options = {}) {
         if (!(options.newTab || options.reuse === false)) {
             const pages = await this.sessionPages();
-            const page = pages[0] || null;
+            const existing = pages[0] || null;
+            const browserPages = existing ? [] : await this.pages();
+            const page = existing || browserPages.find((item) => item.pageUrl === url || item.pageUrl === url.replace(/#.*$/, '')) || browserPages[0] || null;
             if (page) {
                 this.sessionId = page.sessionId || this.sessionId;
                 let next = page;
