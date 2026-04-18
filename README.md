@@ -12,7 +12,7 @@ CTM Puppet is a Chrome extension plus local server for trusted browser control, 
 6. Keep the extension page open until `GET http://127.0.0.1:4017/api/instances` shows a connected item
 7. For another Chrome instance, start the server with `PORT=4021 npm run server` and use `const { browser, status } = await server.start({ port: 4021 })`
 
-`npm run open:extension` now appends the target server as URL params, so each opened extension tab binds itself to that port automatically.
+`npm run open:extension` now appends the target server as URL params, so each opened extension tab binds itself to that port automatically. If that server already has a connected CTM Puppet extension page, the opener exits without creating another extension tab.
 
 ## SDK First
 
@@ -60,6 +60,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
 - if `browser` is `null`, the server is healthy but no extension page is bound yet
 - extension pages opened through `npm run open:extension` or the skill launcher bind to their own `?port=` / `?server=` URL params instead of sharing one manual setting
+- the opener does not create a new extension tab when the target server already has a connected instance
 - `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
 - `await browser.pages()` returns all open browser tabs bound as CTM Puppet pages

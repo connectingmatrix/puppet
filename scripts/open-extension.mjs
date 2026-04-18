@@ -36,6 +36,17 @@ const readServerUrl = async () => {
     }
 };
 
+const readConnectedInstance = async () => {
+    try {
+        const response = await fetch(`${serverUrl}/api/instances`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.items && data.items.find((item) => item.status === 'connected') || null;
+    } catch {
+        return null;
+    }
+};
+
 const readExtensionUrl = async () => {
     const provided = process.argv[2] || process.env.CTM_PUPPET_EXTENSION_URL || '';
     if (provided) {
@@ -60,6 +71,13 @@ const extensionUrl = await readExtensionUrl();
 if (!extensionUrl) {
     console.error('No extension URL is known. Pass it as the first argument or set CTM_PUPPET_EXTENSION_URL.');
     process.exit(1);
+}
+
+const connected = process.env.CTM_PUPPET_OPEN_ALWAYS ? null : await readConnectedInstance();
+if (connected) {
+    await saveUrl(connected.extensionUrl || extensionUrl);
+    console.log(`CTM Puppet extension already connected for ${serverUrl}.`);
+    process.exit(0);
 }
 
 const [command, args] = readCommand(readOpenUrl(extensionUrl));
