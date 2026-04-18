@@ -15,6 +15,7 @@ export interface RemoteEvent {
 }
 
 export interface RemoteInstance {
+    browserId: string;
     connectedAt: number;
     events: RemoteEvent[];
     extensionId: string;

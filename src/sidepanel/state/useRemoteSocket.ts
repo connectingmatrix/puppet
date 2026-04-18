@@ -3,6 +3,7 @@ import { runRemoteJob } from '@/src/background/job-runner';
 import { closeAllLivePages } from '@/src/background/page-session-work';
 import { setLiveEmitter } from '@/src/background/live-event-work';
 import { runRequestResolve } from '@/src/sidepanel/state/request-resolve';
+import { readBrowserId } from '@/src/background/browser-id-work';
 import { readRuntimeApi } from '@/src/shared/extension-api';
 import { RemoteEvent, RemoteMessage, RemoteSettings } from '@/src/shared/remote-types';
 
@@ -14,7 +15,7 @@ const readSocketUrl = (serverUrl: string) => {
 
 const readText = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
-export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
+export const useRemoteSocket = (loading: boolean, settings: RemoteSettings, enabled = true) => {
     const [entries, setEntries] = useState<RemoteEvent[]>([]);
     const [instanceId] = useState(() => crypto.randomUUID());
     const [status, setStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
@@ -71,6 +72,10 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
     useEffect(() => {
         closedRef.current = false;
         jobsRef.current = [];
+        if (!enabled) {
+            setStatus('connecting');
+            return () => { closedRef.current = true; };
+        }
         if (loading) {
             setStatus('connecting');
             return () => { closedRef.current = true; };
@@ -97,7 +102,9 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
                 window.clearInterval(heartbeatRef.current);
                 setStatus('connected');
                 addEntry('Socket connected.', 'base');
-                send({ type: 'instance.register', instanceId, payload: { extensionId: runtime.id, extensionUrl: runtime.getURL('sidepanel.html'), pageUrl: window.location.href } });
+                readBrowserId().then((browserId) => {
+                    send({ type: 'instance.register', instanceId, payload: { browserId, extensionId: runtime.id, extensionUrl: runtime.getURL('sidepanel.html'), pageUrl: window.location.href } });
+                }).catch(() => send({ type: 'instance.register', instanceId, payload: { extensionId: runtime.id, extensionUrl: runtime.getURL('sidepanel.html'), pageUrl: window.location.href } }));
                 heartbeatRef.current = window.setInterval(() => {
                     send({ type: 'instance.heartbeat', instanceId });
                     addEntry('Heartbeat sent.', 'warn');
@@ -135,6 +142,6 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
             if (socketRef.current) socketRef.current.close();
             socketRef.current = null;
         };
-    }, [instanceId, loading, settings.remoteEnabled, settings.serverUrl, settings.updatedAt]);
+    }, [enabled, instanceId, loading, settings.remoteEnabled, settings.serverUrl, settings.updatedAt]);
     return { entries, instanceId, status };
 };

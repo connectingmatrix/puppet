@@ -8,11 +8,12 @@ CTM Puppet is a Chrome extension plus local server for trusted browser control, 
 2. `npm run build`
 3. Load `/Users/abeer/dev/chrome_extension_utils/dist` as an unpacked Chrome extension
 4. `npm run server`
-5. `npm run open:extension -- chrome-extension://YOUR_EXTENSION_ID/sidepanel.html`
-6. Keep the extension page open until `GET http://127.0.0.1:4017/api/instances` shows a connected item
-7. For another Chrome instance, start the server with `PORT=4021 npm run server` and use `const { browser, status } = await server.start({ port: 4021 })`
+5. For the default `4017` port, keep Chrome running; the extension background worker connects without an extension tab
+6. Only open `sidepanel.html` for a custom port, for example `npm run open:extension -- chrome-extension://YOUR_EXTENSION_ID/sidepanel.html`
+7. Check `GET http://127.0.0.1:4017/api/instances` for a connected item
+8. For another Chrome instance, start the server with `PORT=4021 npm run server` and use `const { browser, status } = await server.start({ port: 4021 })`
 
-`npm run open:extension` now appends the target server as URL params, so each opened extension tab binds itself to that port automatically. If that server already has a connected CTM Puppet extension page, the opener exits without creating another extension tab.
+`npm run open:extension` appends the target server as URL params, so custom-port extension tabs bind themselves to that port automatically. The default `4017` connection is owned by the extension background worker.
 
 ## SDK First
 
@@ -58,10 +59,11 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `const { browser, status, port, baseUrl, extensionUrl, instanceId } = await server.start()` starts or reuses the local listener
 - `const { browser, status } = await server.start({ port: 4021 })` targets another CTM Puppet server port
 - `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
-- if `browser` is `null`, the server is healthy but no extension page is bound yet
+- if `browser` is `null`, the server is healthy but no extension instance has registered yet
 - `server.stop()` only clears the local SDK browser binding; it does not stop the shared CTM Puppet listener
 - use `server.stop({ force: true })` only when you intentionally want to kill a listener started by this SDK process
-- extension pages opened through `npm run open:extension` or the skill launcher bind to their own `?port=` / `?server=` URL params instead of sharing one manual setting
+- default-port automation does not require an extension page; the background worker registers itself with the server
+- extension pages opened through `npm run open:extension` or the skill launcher are only needed for custom-port binding
 - the opener does not create a new extension tab when the target server already has a connected instance
 - `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
@@ -139,9 +141,9 @@ const { browser } = state;
 ```
 
 Status meanings:
-- `connected`: server is healthy and a CTM Puppet extension page is bound to that port
-- `server_ready_no_instance`: server is already running but no extension page is bound yet
-- `server_started_no_instance`: this call started the server, but no extension page is bound yet
+- `connected`: server is healthy and a CTM Puppet extension instance is bound to that port
+- `server_ready_no_instance`: server is already running but no extension instance has registered yet
+- `server_started_no_instance`: this call started the server, but no extension instance has registered yet
 
 ## Open Pages
 
@@ -359,9 +361,11 @@ The Google suite does this:
 
 ## Notes
 
-- Each open extension page is a separate live instance
+- Each Chrome profile broadcasts one stable `browserId`, and a server keeps one active instance per browser id
+- The default `4017` connection is a background-worker instance, so relaunching the server does not require reopening `sidepanel.html`
+- Each registration includes a stable `browserId`, and the server keeps only one connected instance per browser id
 - `browser.newPage()` reuses the latest CTM Puppet-controlled tab by default; across separate Codex script runs it first binds an existing browser tab, then navigates that tab
 - use `{ newTab: true }` for intentional multi-page comparisons
-- Page sessions are in memory and disappear if the server restarts or the extension page closes
-- The extension page must stay open while SDK or REST work is running
+- Page sessions are in memory and disappear if the server restarts or the owning extension instance disconnects
+- Custom-port extension pages must stay open while SDK or REST work is running on that custom port
 - The packaged extension artifact is `/Users/abeer/dev/chrome_extension_utils/artifacts/ctm-puppet.crx`

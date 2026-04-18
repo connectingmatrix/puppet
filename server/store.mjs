@@ -9,7 +9,7 @@ const readEvents = (entry) => {
     for (const event of entry.events) items.push(event);
     return items;
 };
-const readItem = (id, entry) => ({ connectedAt: entry.connectedAt, events: readEvents(entry), extensionId: entry.extensionId, extensionUrl: entry.extensionUrl, id, lastSeen: entry.lastSeen, pageUrl: entry.pageUrl, socketId: entry.socketId, status: 'connected' });
+const readItem = (id, entry) => ({ browserId: entry.browserId || '', connectedAt: entry.connectedAt, events: readEvents(entry), extensionId: entry.extensionId, extensionUrl: entry.extensionUrl, id, lastSeen: entry.lastSeen, pageUrl: entry.pageUrl, socketId: entry.socketId, status: 'connected' });
 const pushEvent = (entry, text, tone = 'base') => {
     entry.events.unshift({ at: readNow(), text, tone });
     if (entry.events.length > eventLimit) entry.events.length = eventLimit;
@@ -48,7 +48,8 @@ export const listInstances = () => {
 export const registerInstance = (instanceId, socket, payload) => {
     const current = instances.get(instanceId);
     if (current && current.socket !== socket && readOpen(current)) current.socket.close();
-    const entry = { connectedAt: readNow(), events: [], extensionId: payload.extensionId || '', extensionUrl: payload.extensionUrl || '', lastSeen: readNow(), pageUrl: payload.pageUrl || '', socket, socketId: crypto.randomUUID() };
+    for (const [id, entry] of instances.entries()) if (payload.browserId && entry.browserId === payload.browserId && id !== instanceId && readOpen(entry)) entry.socket.close();
+    const entry = { browserId: payload.browserId || '', connectedAt: readNow(), events: [], extensionId: payload.extensionId || '', extensionUrl: payload.extensionUrl || '', lastSeen: readNow(), pageUrl: payload.pageUrl || '', socket, socketId: crypto.randomUUID() };
     pushEvent(entry, 'Socket connected.');
     instances.set(instanceId, entry);
     return readItem(instanceId, entry);
@@ -61,11 +62,13 @@ export const heartbeatInstance = (instanceId) => {
     return readItem(instanceId, entry);
 };
 
-export const disconnectInstance = (instanceId, error) => {
+export const disconnectInstance = (instanceId, error, socket = null) => {
     const entry = instances.get(instanceId);
-    if (!entry) return;
+    if (!entry) return false;
+    if (socket && entry.socket !== socket) return false;
     rejectJobs(instanceId, error);
     instances.delete(instanceId);
+    return true;
 };
 
 export const createJob = (kind, payload, instanceId = '', timeoutMs = 45000) => {

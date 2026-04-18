@@ -8,6 +8,7 @@ import { useDomCompare } from '@/src/sidepanel/state/useDomCompare';
 import { useRemoteSettings } from '@/src/sidepanel/state/useRemoteSettings';
 import { useRemoteSocket } from '@/src/sidepanel/state/useRemoteSocket';
 import { readCurrentTab, readRuntimeApi, readTabsApi } from '@/src/shared/extension-api';
+import { readRemoteUrlOverride } from '@/src/shared/remote-url';
 import { useEffect, useState } from 'react';
 
 const App = () => {
@@ -16,7 +17,7 @@ const App = () => {
     const [showSettings, setShowSettings] = useState(false);
     const [showOpenInTab, setShowOpenInTab] = useState(true);
     const marks = readStructureMarks(state.leftSnapshot.tree, state.rightSnapshot.tree);
-    const remoteSocket = useRemoteSocket(remote.loading, remote.activeSettings);
+    const remoteSocket = useRemoteSocket(remote.loading, remote.activeSettings, Boolean(readRemoteUrlOverride()));
     const openInTab = () => readTabsApi().create({ url: readRuntimeApi().getURL(`sidepanel.html${window.location.search || ''}`) });
     const saveSettings = async () => {
         const ok = await remote.save();

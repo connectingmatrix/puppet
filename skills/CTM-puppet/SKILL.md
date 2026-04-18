@@ -5,7 +5,7 @@ description: Use when you need live page sessions, trusted browser control, scre
 
 # CTM Puppet
 
-Run `skills/CTM-puppet/scripts/start_ctm_puppet.sh` first. Pass the extension page URL if it is not saved yet. Pass a second argument if you want a custom server port.
+Run `skills/CTM-puppet/scripts/start_ctm_puppet.sh` first. The default `4017` port uses the extension background worker and does not need an extension page. Pass the extension page URL and a second argument only for a custom server port.
 
 Use this skill for:
 - opening one or two persistent pages and keeping their `pageId`s
@@ -15,15 +15,15 @@ Use this skill for:
 - running Puppeteer-style `browser/page/locator` scripts through the SDK or `POST /api/pages/run`
 
 Workflow:
-1. Start the server and open the extension page:
-   `skills/CTM-puppet/scripts/start_ctm_puppet.sh chrome-extension://efnpdobifdpehhodkecgddbplgkkeogo/sidepanel.html`
+1. Start the default server:
+   `skills/CTM-puppet/scripts/start_ctm_puppet.sh`
 2. For another Chrome instance use a custom port:
    `skills/CTM-puppet/scripts/start_ctm_puppet.sh chrome-extension://efnpdobifdpehhodkecgddbplgkkeogo/sidepanel.html 4021`
 3. Treat the port state explicitly:
 - if `GET /api/health` fails, the server is down
-- if `GET /api/health` works and `GET /api/instances` is empty, the server is ready but no extension page is bound yet
+- if `GET /api/health` works and `GET /api/instances` is empty, the server is ready but no extension instance has registered yet
 - if `GET /api/instances` has an item, the server is connected
-4. Keep the extension page open until `GET http://127.0.0.1:4017/api/instances` or the matching custom-port URL shows a connected instance.
+4. For default `4017`, wait for the background worker or reload the installed extension once; for a custom port, keep that URL-bound extension page open.
 5. For persistent work call `POST /api/pages/open`, keep the returned `sessionId` and `pageId`s, then use:
 - `POST /api/pages/actions`
 - `POST /api/pages/data`
@@ -96,9 +96,11 @@ Notes:
 - `server.stop()` only clears the local SDK browser binding; it does not stop the shared listener.
 - Use `server.stop({ force: true })` only when intentionally killing an SDK-started listener.
 - `skills/CTM-puppet/scripts/start_ctm_puppet.sh EXTENSION_URL CUSTOM_PORT` starts and opens the matching port pair.
-- the opener appends `?port=` and `?server=` so each extension tab auto-binds to its own server port without manual settings changes
+- the default `4017` server connects through the extension background worker without opening `sidepanel.html`
+- custom ports still use `sidepanel.html?port=...&server=...` because a custom-port binding is page-scoped
+- each connection includes a stable `browserId`, and the server keeps only one connected instance per browser id
 - the opener exits without opening a new extension tab when the target server already has a connected instance
-- Each open extension page is a separate live instance.
+- Each Chrome profile broadcasts one stable `browserId`, and a server keeps one active instance per browser id.
 - `browser.newPage()` reuses an existing controlled page by default; across repeated Codex automation processes it binds an already-open browser tab before opening anything new.
 - Use `{ newTab: true }` for intentional multi-page comparisons.
-- Page sessions are in memory and disappear if the server restarts or the extension page closes.
+- Page sessions are in memory and disappear if the server restarts or the owning extension instance disconnects.

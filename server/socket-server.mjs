@@ -54,12 +54,10 @@ export const attachSocketServer = (server) => {
             }
         });
         socket.on('close', () => {
-            dropLiveCommands(null, instanceId, 'Extension disconnected.');
-            if (instanceId) disconnectInstance(instanceId, 'Socket closed.');
+            if (instanceId && disconnectInstance(instanceId, 'Socket closed.', socket)) dropLiveCommands(null, instanceId, 'Extension disconnected.');
         });
         socket.on('error', () => {
-            dropLiveCommands(null, instanceId, 'Extension disconnected.');
-            if (instanceId) disconnectInstance(instanceId, 'Socket error.');
+            if (instanceId && disconnectInstance(instanceId, 'Socket error.', socket)) dropLiveCommands(null, instanceId, 'Extension disconnected.');
         });
     });
     liveSocket.on('connection', (socket) => {

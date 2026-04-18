@@ -10,6 +10,11 @@ if ! lsof -iTCP:${PORT_VALUE} -sTCP:LISTEN -n -P >/dev/null 2>&1; then
 else
   echo "CTM Puppet server already running on ${SERVER_URL}"
 fi
-CTM_PUPPET_SERVER_URL="${SERVER_URL}" npm run open:extension -- "$1"
-echo "Extension opener launched for ${SERVER_URL}"
-echo "If /api/instances is empty, the server is ready and waiting for a bound extension page."
+if [ "${PORT_VALUE}" = "4017" ]; then
+  echo "Default port uses the extension background worker; no extension tab opened."
+  echo "If /api/instances is empty, wait for the background worker alarm or reload the extension once."
+else
+  CTM_PUPPET_SERVER_URL="${SERVER_URL}" npm run open:extension -- "$1"
+  echo "Extension opener launched for ${SERVER_URL}"
+  echo "If /api/instances is empty, the custom-port extension page must stay open."
+fi
