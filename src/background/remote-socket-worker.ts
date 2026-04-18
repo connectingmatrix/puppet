@@ -5,6 +5,7 @@ import { runRequestResolve } from '@/src/background/request-resolve-work';
 import { readRuntimeApi } from '@/src/shared/extension-api';
 import { readRemoteSettings } from '@/src/shared/remote-store';
 import { remoteServerUrl, RemoteMessage } from '@/src/shared/remote-types';
+import { runWithLimit } from '@/src/shared/time-limit';
 
 let busy = false;
 let heartbeat = 0;
@@ -42,7 +43,7 @@ const runNext = async () => {
     const progress = setInterval(() => send({ jobId: message.jobId, progress: `Working on ${message.kind || 'inspect-selector'}.`, type: 'job.progress' }), 5000);
     try {
         send({ jobId: message.jobId, progress: `Started ${message.kind || 'inspect-selector'}.`, type: 'job.progress' });
-        const result = await runRemoteJob({ id: message.jobId || '', kind: message.kind || 'inspect-selector', payload: message.payload || {} }, instanceId, emit);
+        const result = await runWithLimit(runRemoteJob({ id: message.jobId || '', kind: message.kind || 'inspect-selector', payload: message.payload || {}, timeoutMs: message.timeoutMs }, instanceId, emit), Number(message.timeoutMs) || 45000, `${message.kind || 'remote'} job`);
         send({ jobId: message.jobId, result, type: 'job.result' });
     } catch (error) {
         send({ error: readText(error, 'Remote job failed.'), jobId: message.jobId, type: 'job.error' });

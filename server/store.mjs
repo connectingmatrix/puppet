@@ -88,7 +88,7 @@ export const createJob = (kind, payload, instanceId = '', timeoutMs = 45000) => 
         }
         pushEvent(entry, `Job ${kind} dispatched.`, 'warn');
         try {
-            entry.socket.send(JSON.stringify({ type: 'job.dispatch', jobId: id, kind, payload }));
+            entry.socket.send(JSON.stringify({ type: 'job.dispatch', jobId: id, kind, payload, timeoutMs }));
         } catch (error) {
             clearTimeout(job.timer);
             jobs.delete(id);

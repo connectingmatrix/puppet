@@ -40,6 +40,7 @@ export interface RemoteMessage {
     progress?: string;
     result?: Record<string, unknown>;
     sessionId?: string;
+    timeoutMs?: number;
     type: string;
 }
 
@@ -83,6 +84,7 @@ export interface RemoteJob {
     id: string;
     kind: RemoteJobKind;
     payload: Record<string, unknown>;
+    timeoutMs?: number;
 }
 
 export const remoteSettingsKey = 'remote-settings';

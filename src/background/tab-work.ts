@@ -9,6 +9,7 @@ import { runPageDomAction } from '@/src/background/page-dom-work';
 import { readPageScriptResult, runPageScript } from '@/src/background/page-script-read';
 import { runFrameScript } from '@/src/background/page-script-work';
 import { runUserAction } from '@/src/background/page-user-run';
+import { waitForTab } from '@/src/background/tab-wait-work';
 import { waitForPageTarget } from '@/src/background/page-wait-read';
 import { waitForPageRoot } from '@/src/background/page-wait';
 import { readNodeDetail, readDomSnapshot } from '@/src/sidepanel/lib/page-readers';
@@ -19,22 +20,6 @@ const rootPollMs = 250;
 const readWaitError = (selector: string, state: { loading: boolean; title: string; url: string }) => state.loading
     ? `The page is still showing a loading shell while waiting for ${selector}. Final URL: ${state.url}. Final title: ${state.title}.`
     : `No visible element matches ${selector} after waiting for GraphQL and page render. Final URL: ${state.url}. Final title: ${state.title}.`;
-
-const waitForTab = (tabId: number) => new Promise<void>((resolve) => {
-    let done = false;
-    const finish = () => {
-        if (done) return;
-        done = true;
-        chrome.tabs.onUpdated.removeListener(listener);
-        resolve();
-    };
-    const listener = (updatedId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
-        if (updatedId !== tabId || changeInfo.status !== 'complete') return;
-        finish();
-    };
-    chrome.tabs.onUpdated.addListener(listener);
-    chrome.tabs.get(tabId).then((tab) => { if (tab.status === 'complete') finish(); });
-});
 
 export const openPageTab = async (url: string, active: boolean, waitUntil = 'load') => {
     const tab = await chrome.tabs.create({ active, url });
@@ -81,10 +66,10 @@ export const captureLiveTab = async (tabId: number, selector: string, path: stri
 
 export const runPageAction = async (tabId: number, action) => {
     if (action.type === 'upload_files') return uploadFiles(tabId, action.selector || '', action.index || 0, action.files || []);
-    if (action.type === 'wait_for_selector') return runFrameScript(tabId, action.frameId || 0, waitForPageTarget, [action.selector || '', action.index || 0, Boolean(action.visible), action.timeoutMs || 30000, 200]);
+    if (action.type === 'wait_for_selector') return runFrameScript(tabId, action.frameId || 0, waitForPageTarget, [action.selector || '', action.index || 0, Boolean(action.visible), action.timeoutMs || 30000, 200], (action.timeoutMs || 30000) + 2000);
     if (action.type === 'get_page_html') return runFrameScript(tabId, action.frameId || 0, readPageHtmlTarget, [action.selector || 'html', action.index || 0]);
     if (action.type === 'execute_script' && !(action.frameId || 0)) return runPageEval(tabId, action.script || '', action.args || []);
-    if (action.type === 'execute_script') return readPageScriptResult(await runFrameScript(tabId, action.frameId || 0, runPageScript, [action.script || '', action.args || []]));
+    if (action.type === 'execute_script') return readPageScriptResult(await runFrameScript(tabId, action.frameId || 0, runPageScript, [action.script || '', action.args || []], action.timeoutMs || 60000));
     if (action.type === 'submit') return runFrameScript(tabId, action.frameId || 0, runPageDomAction, [action]);
     const data = await runUserAction(tabId, action);
     if (action.waitUntil) await waitForLoadState(tabId, action.waitUntil, action.frameId || 0);

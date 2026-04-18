@@ -1,8 +1,14 @@
 import { Browser } from '../sdk/browser.mjs';
 import { readServerState } from '../sdk/server-state.mjs';
+import { runWithLimit } from './time-limit.mjs';
 
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 const readConsole = (logs) => ({ error: (...args) => logs.push({ level: 'error', text: args.join(' ') }), log: (...args) => logs.push({ level: 'log', text: args.join(' ') }), warn: (...args) => logs.push({ level: 'warn', text: args.join(' ') }) });
+const readRunMs = (payload) => Number(payload.timeoutMs) || 120000;
+const stopRun = async (browser, control, payload) => {
+    if (payload.closeOnExit) await browser.close();
+    await control.stop();
+};
 
 export const runScript = async (baseUrl, payload) => {
     const browser = new Browser(baseUrl);
@@ -19,28 +25,27 @@ export const runScript = async (baseUrl, payload) => {
         },
         stop: async () => (delete globalThis.browser, null)
     };
-    browser.sessionId = payload.sessionId || '';
-    const state = await control.start(payload);
-    if (payload.pages && payload.pages.length) {
-        let index = 0;
-        for (const page of payload.pages) {
-            await browser.newPage(page.url, { ...page, newTab: Boolean(page.newTab) || index > 0 });
-            index += 1;
+    const runBody = async () => {
+        browser.sessionId = payload.sessionId || '';
+        const state = await control.start(payload);
+        if (payload.pages && payload.pages.length) {
+            let index = 0;
+            for (const page of payload.pages) {
+                await browser.newPage(page.url, { ...page, newTab: Boolean(page.newTab) || index > 0 });
+                index += 1;
+            }
         }
-    }
-    if (!(payload.pages && payload.pages.length) && browser.sessionId) browser.live.open(browser.sessionId);
-    const run = new AsyncFunction('args', 'browser', 'server', 'console', payload.script || '');
-    try {
-        const result = await Promise.race([run(payload.args || [], state.browser, control, readConsole(logs)), new Promise((_, reject) => setTimeout(() => reject(new Error('Timed out while running the script.')), payload.timeoutMs || 120000))]);
+        if (!(payload.pages && payload.pages.length) && browser.sessionId) browser.live.open(browser.sessionId);
+        const run = new AsyncFunction('args', 'browser', 'server', 'console', payload.script || '');
+        const result = await run(payload.args || [], state.browser, control, readConsole(logs));
         const pages = await browser.sessionPages();
-        if (payload.closeOnExit) await browser.close();
-        await control.stop();
         const pageIds = [];
         for (const page of pages) pageIds.push(page.pageId);
         return { logs, pageIds, result, sessionId: browser.sessionId };
-    } catch (error) {
-        if (payload.closeOnExit) await browser.close();
-        await control.stop();
-        throw error;
+    };
+    try {
+        return await runWithLimit(runBody(), readRunMs(payload), 'script run');
+    } finally {
+        await runWithLimit(stopRun(browser, control, payload), 5000, 'script cleanup').catch(() => {});
     }
 };

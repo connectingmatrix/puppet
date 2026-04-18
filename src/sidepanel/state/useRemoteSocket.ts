@@ -6,6 +6,7 @@ import { runRequestResolve } from '@/src/sidepanel/state/request-resolve';
 import { readBrowserId } from '@/src/background/browser-id-work';
 import { readRuntimeApi } from '@/src/shared/extension-api';
 import { RemoteEvent, RemoteMessage, RemoteSettings } from '@/src/shared/remote-types';
+import { runWithLimit } from '@/src/shared/time-limit';
 
 const readSocketUrl = (serverUrl: string) => {
     const url = new URL('/api/socket', serverUrl);
@@ -56,7 +57,7 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings, enab
         }, 5000);
         try {
             send({ type: 'job.progress', jobId: message.jobId, progress: `Started ${message.kind || 'inspect-selector'}.` });
-            const result = await runRemoteJob({ id: message.jobId || '', kind: message.kind || 'inspect-selector', payload: message.payload || {} }, instanceId, emit);
+            const result = await runWithLimit(runRemoteJob({ id: message.jobId || '', kind: message.kind || 'inspect-selector', payload: message.payload || {}, timeoutMs: message.timeoutMs }, instanceId, emit), Number(message.timeoutMs) || 45000, `${message.kind || 'remote'} job`);
             send({ type: 'job.result', jobId: message.jobId, result });
             addEntry(`Job ${message.kind || 'inspect-selector'} completed.`, 'base');
         } catch (error) {

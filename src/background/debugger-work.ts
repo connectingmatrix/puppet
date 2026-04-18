@@ -2,30 +2,32 @@ import { ensureDebugEvents } from '@/src/background/debug-live-work';
 import { ensureNetworkEvents } from '@/src/background/network-event-work';
 import { ensureInterceptWork } from '@/src/background/intercept-work';
 import { ScreenSize } from '@/src/shared/remote-types';
+import { runWithLimit } from '@/src/shared/time-limit';
 
 const attached = new Set<number>();
 const enabled = new Set<number>();
 const version = '1.3';
 const readTarget = (tabId: number) => ({ tabId });
+const runCommand = (tabId: number, method: string, command = {}, timeoutMs = 45000) => runWithLimit(chrome.debugger.sendCommand(readTarget(tabId), method, command), timeoutMs, method);
 
 export const ensureDebugTab = async (tabId: number) => {
     ensureDebugEvents();
     ensureNetworkEvents();
     ensureInterceptWork();
     if (!attached.has(tabId)) {
-        await chrome.debugger.attach(readTarget(tabId), version);
+        await runWithLimit(chrome.debugger.attach(readTarget(tabId), version), 30000, 'debugger attach');
         attached.add(tabId);
     }
     if (enabled.has(tabId)) return;
-    await chrome.debugger.sendCommand(readTarget(tabId), 'Page.enable');
-    await chrome.debugger.sendCommand(readTarget(tabId), 'Runtime.enable');
-    await chrome.debugger.sendCommand(readTarget(tabId), 'Network.enable');
+    await runCommand(tabId, 'Page.enable');
+    await runCommand(tabId, 'Runtime.enable');
+    await runCommand(tabId, 'Network.enable');
     enabled.add(tabId);
 };
 
-export const sendDebug = async (tabId: number, method: string, command = {}) => {
+export const sendDebug = async (tabId: number, method: string, command = {}, timeoutMs = 45000) => {
     await ensureDebugTab(tabId);
-    return chrome.debugger.sendCommand(readTarget(tabId), method, command);
+    return runCommand(tabId, method, command, timeoutMs);
 };
 
 export const resizeViewport = async (tabId: number, size: ScreenSize) => {
@@ -42,7 +44,7 @@ export const resizeViewport = async (tabId: number, size: ScreenSize) => {
 
 export const clearViewport = async (tabId: number) => {
     if (!attached.has(tabId)) return;
-    await chrome.debugger.sendCommand(readTarget(tabId), 'Emulation.clearDeviceMetricsOverride');
+    await runCommand(tabId, 'Emulation.clearDeviceMetricsOverride');
 };
 
 const readFullClip = async (tabId: number) => {
@@ -54,7 +56,7 @@ const readFullClip = async (tabId: number) => {
 export const captureScreenshot = async (tabId: number, clip = null, current = false) => {
     const nextClip = clip || current ? clip : await readFullClip(tabId);
     const command = nextClip ? { captureBeyondViewport: true, clip: nextClip, format: 'png', fromSurface: true } : { format: 'png', fromSurface: true };
-    const result = await sendDebug(tabId, 'Page.captureScreenshot', command);
+    const result = await sendDebug(tabId, 'Page.captureScreenshot', command, 90000);
     return result.data || '';
 };
 
@@ -70,7 +72,7 @@ export const readPageStats = async (tabId: number) => {
 export const closeDebugTab = async (tabId: number) => {
     if (!attached.has(tabId)) return;
     await clearViewport(tabId);
-    await chrome.debugger.detach(readTarget(tabId));
+    await runWithLimit(chrome.debugger.detach(readTarget(tabId)), 30000, 'debugger detach');
     attached.delete(tabId);
     enabled.delete(tabId);
 };
