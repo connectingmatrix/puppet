@@ -1,3 +1,6 @@
+import { helpDetailCommand } from './help-detail.mjs';
+import { helpMdCommand } from './help-md.mjs';
+
 const main = `Puppet CLI
 
 Usage:
@@ -11,6 +14,8 @@ Usage:
   puppet exec --eval "const state = await server.start(); return state.status"
   puppet api GET /api/health
   puppet api POST /api/pages/data --json '{"pageId":"...","selector":"body"}'
+  puppet help detail
+  puppet help md
 
 Global options:
   --port <port>       Target local server port. Default: 4017
@@ -19,7 +24,10 @@ Global options:
   --file <path>       Read request JSON from a file.
   --stdin             Read request JSON from stdin.
 
-Run "puppet help <command>" for focused examples.`;
+Help:
+  puppet help detail  Lists all APIs, CLI usage, helper functions, and return shapes.
+  puppet help md      Prints the current README.md integration guide.
+  puppet help COMMAND Prints focused examples for pages, run, compare, or server.`;
 
 const pages = `Puppet page API commands
 
@@ -79,8 +87,10 @@ Commands:
 
 Default port 4017 is handled by the extension background worker. Custom ports require a URL-bound extension page.`;
 
-export const helpCommand = (args) => {
+export const helpCommand = async (args) => {
     const key = args[0] || '';
+    if (key === 'detail') return helpDetailCommand();
+    if (key === 'md') return helpMdCommand();
     if (key === 'pages' || key === 'actions') return console.log(pages);
     if (key === 'run' || key === 'exec' || key === 'script') return console.log(run);
     if (key === 'compare' || key === 'inspect') return console.log(compare);

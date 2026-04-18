@@ -19,6 +19,8 @@ The `puppet` binary is the preferred automation interface. It can start the serv
 ```sh
 puppet help
 puppet help pages
+puppet help detail
+puppet help md
 puppet server start --port 4017
 puppet server status --port 4017
 puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
@@ -29,7 +31,7 @@ puppet run ./inspect.mjs --timeout-ms 180000
 puppet api GET /api/health
 ```
 
-Request bodies can come from `--json`, `--file`, or `--stdin`. The raw API escape hatch is `puppet api METHOD /api/path`. Files passed to `puppet run` are server-side function bodies with `server`, `browser`, `args`, and `console` already in scope.
+Request bodies can come from `--json`, `--file`, or `--stdin`. The raw API escape hatch is `puppet api METHOD /api/path`. Files passed to `puppet run` are server-side function bodies with `server`, `browser`, `args`, and `console` already in scope. Use `puppet help detail` for the API/helper return reference and `puppet help md` to print this README from the installed CLI.
 
 ## SDK First
 

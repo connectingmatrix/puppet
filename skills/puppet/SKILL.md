@@ -12,6 +12,8 @@ Start and inspect state:
 - `puppet server status --port 4017`
 - `puppet instances --port 4017`
 - `puppet help`
+- `puppet help detail`
+- `puppet help md`
 - `puppet help pages`
 - `puppet help run`
 
@@ -28,6 +30,8 @@ Preferred CLI workflows:
 - Compare pages: `puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'`
 - Run scripts: `puppet run ./script.mjs --timeout-ms 180000`
 - Execute inline scripts: `puppet exec --eval "const state = await server.start({port:4017}); return state.status"`
+- Print API/helper reference: `puppet help detail`
+- Print full integration docs: `puppet help md`
 
 Script scope for `puppet run` and `puppet exec`:
 - Script files are server-side function bodies, not standalone Node modules.
