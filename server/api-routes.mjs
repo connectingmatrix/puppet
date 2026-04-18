@@ -56,7 +56,7 @@ router.post('/pages/run', async (request, response) => {
         response.status(409).json({ error: error.message, ok: false });
     }
 });
-router.post('/pages/screenshot', (request, response) => runLiveJob(response, 'pages-screenshot', { fullPage: Boolean(request.body.fullPage), pageId: request.body.pageId, selector: request.body.selector || '' }, request.body));
+router.post('/pages/screenshot', (request, response) => runLiveJob(response, 'pages-screenshot', { current: Boolean(request.body.current) || request.body.fullPage === false, pageId: request.body.pageId, selector: request.body.selector || '' }, request.body));
 router.post('/pages/close', (request, response) => runLiveJob(response, 'pages-close', { pageId: request.body.pageId }, request.body));
 
 export default router;

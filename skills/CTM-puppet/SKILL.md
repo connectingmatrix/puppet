@@ -44,7 +44,8 @@ SDK shape:
 - `if (!browser) throw new Error(\`CTM Puppet not ready: ${status}\`)`
 - `await browser.pages()` for all open browser tabs
 - `await browser.sessionPages()` for CTM Puppet session tabs only
-- `const page = await browser.newPage()`
+- `const page = await browser.newPage()` reuses the latest CTM Puppet page by default
+- `const page = await browser.newPage(url, { newTab: true })` only when a fresh tab is intentional
 - `await page.goto(url)`
 - `await page.locator(selector).fill(value)`
 - `await page.waitForSelector(selector)`
@@ -57,6 +58,8 @@ SDK shape:
 - `await page.graphql(query, { variables })`
 - `await page.request({ method, url, body, auth })`
 - `await page.localStorage.get/set/remove/all()`
+- `await page.screenshot({ path })` captures the whole page by default
+- `await page.screenshot({ current: true, path })` captures only the visible viewport
 - `page.on('console', msg => msg.text())`
 - `page.on('request', request => request.abort() || request.continue() || request.respond(...))`
 - `await browser.close()`
@@ -93,4 +96,6 @@ Notes:
 - `skills/CTM-puppet/scripts/start_ctm_puppet.sh EXTENSION_URL CUSTOM_PORT` starts and opens the matching port pair.
 - the opener appends `?port=` and `?server=` so each extension tab auto-binds to its own server port without manual settings changes
 - Each open extension page is a separate live instance.
+- `browser.newPage()` reuses an existing controlled page by default to avoid tab buildup during repeated Codex automation.
+- Use `{ newTab: true }` for intentional multi-page comparisons.
 - Page sessions are in memory and disappear if the server restarts or the extension page closes.

@@ -83,7 +83,7 @@ export const runRemoteJob = async (job: RemoteJob, instanceId: string, emit: Liv
     }
     if (job.kind === 'pages-frames') return { items: await listPageFrames((job.payload as any).pageId) };
     if (job.kind === 'pages-html') return readLiveHtml((job.payload as any).pageId, (job.payload as any).selector || '', (job.payload as any).frameId || 0, (job.payload as any).index || 0);
-    if (job.kind === 'pages-screenshot') return readLiveShot((job.payload as any).pageId, (job.payload as any).selector || '', Boolean((job.payload as any).fullPage));
+    if (job.kind === 'pages-screenshot') return readLiveShot((job.payload as any).pageId, (job.payload as any).selector || '', Boolean((job.payload as any).current) || (job.payload as any).fullPage === false);
     if (job.kind === 'pages-close') return closeLiveSessionPage((job.payload as any).pageId, emit);
     return readInspect(instanceId, job.payload as InspectSelectorPayload, emit);
 };

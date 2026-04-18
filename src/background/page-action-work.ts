@@ -48,7 +48,7 @@ export const runLiveAction = async (action: PageAction, emit: LiveEmit) => {
         return readResult(action, data);
     }
     if (action.type === 'get_page_html') return readResult(action, await readLiveHtml(action.pageId || '', action.selector || ''));
-    if (action.type === 'screenshot_page') return readResult(action, await readLiveShot(action.pageId || '', action.selector || '', Boolean(action.fullPage)));
+    if (action.type === 'screenshot_page') return readResult(action, await readLiveShot(action.pageId || '', action.selector || '', Boolean(action.current) || action.fullPage === false));
     if (action.type === 'close_page') return readResult(action, await closeLiveSessionPage(action.pageId || '', emit));
     if (action.type === 'record_start') {
         const baseline = await readCapture(action.pageId || '', action.selector || 'body', 'root');

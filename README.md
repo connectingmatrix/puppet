@@ -60,7 +60,8 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
 - if `browser` is `null`, the server is healthy but no extension page is bound yet
 - extension pages opened through `npm run open:extension` or the skill launcher bind to their own `?port=` / `?server=` URL params instead of sharing one manual setting
-- `await browser.newPage(url?, options?)`
+- `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default
+- pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
 - `await browser.pages()` returns all open browser tabs bound as CTM Puppet pages
 - `await browser.sessionPages()` returns only pages opened in the current CTM Puppet session
 - `await browser.close()`
@@ -91,7 +92,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
 - `await page.data(selector, { snapshot })`
-- `await page.screenshot({ selector, fullPage, path })`
+- `await page.screenshot({ selector, current, path })` captures the full page by default; pass `{ current: true }` for only the visible viewport
 - `await page.compare(otherPage, options?)`
 - `await page.compareSelector(selector, otherPage.selectorTree(selector), { snapshot: true })`
 - `await page.frames()`
@@ -275,8 +276,10 @@ console.log(accessToken, payload.data, response.status);
   raw: `{ "type": "get_page_data", "pageId": "PAGE_ID", "selector": ".card", "snapshot": true }`
 - `get_page_html`: `await page.html('#main')`
   raw: `{ "type": "get_page_html", "pageId": "PAGE_ID", "selector": "#main" }`
-- `screenshot_page`: `await page.screenshot({ selector: '#main', path: '/tmp/main.png' })`
-  raw: `{ "type": "screenshot_page", "pageId": "PAGE_ID", "selector": "#main", "fullPage": false }`
+- `screenshot_page`: `await page.screenshot({ path: '/tmp/full.png' })`
+  raw: `{ "type": "screenshot_page", "pageId": "PAGE_ID" }`
+- `screenshot_page` current viewport: `await page.screenshot({ current: true, path: '/tmp/current.png' })`
+  raw: `{ "type": "screenshot_page", "pageId": "PAGE_ID", "current": true }`
 - `close_page`: `await page.close()`
   raw: `{ "type": "close_page", "pageId": "PAGE_ID" }`
 - `intercept_request`: `await page.run([{ type: 'intercept_request', pageId: page.pageId, ruleId: 'observe-all', mode: 'observe', match: { urlPattern: '*' } }])`
@@ -354,6 +357,8 @@ The Google suite does this:
 ## Notes
 
 - Each open extension page is a separate live instance
+- `browser.newPage()` reuses the latest CTM Puppet-controlled tab by default to avoid tab buildup during repeated Codex runs
+- use `{ newTab: true }` for intentional multi-page comparisons
 - Page sessions are in memory and disappear if the server restarts or the extension page closes
 - The extension page must stay open while SDK or REST work is running
 - The packaged extension artifact is `/Users/abeer/dev/chrome_extension_utils/artifacts/ctm-puppet.crx`

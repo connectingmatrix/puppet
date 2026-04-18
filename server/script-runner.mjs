@@ -21,7 +21,13 @@ export const runScript = async (baseUrl, payload) => {
     };
     browser.sessionId = payload.sessionId || '';
     const state = await control.start(payload);
-    if (payload.pages && payload.pages.length) for (const page of payload.pages) await browser.newPage(page.url, page);
+    if (payload.pages && payload.pages.length) {
+        let index = 0;
+        for (const page of payload.pages) {
+            await browser.newPage(page.url, { ...page, newTab: Boolean(page.newTab) || index > 0 });
+            index += 1;
+        }
+    }
     if (!(payload.pages && payload.pages.length) && browser.sessionId) browser.live.open(browser.sessionId);
     const run = new AsyncFunction('args', 'browser', 'server', 'console', payload.script || '');
     try {

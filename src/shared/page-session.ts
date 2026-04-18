@@ -78,6 +78,7 @@ export interface PageBrowserPayload {
 }
 
 export interface PageScreenshotPayload {
+    current?: boolean;
     fullPage?: boolean;
     pageId: string;
     selector?: string;

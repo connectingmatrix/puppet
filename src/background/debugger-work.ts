@@ -45,8 +45,15 @@ export const clearViewport = async (tabId: number) => {
     await chrome.debugger.sendCommand(readTarget(tabId), 'Emulation.clearDeviceMetricsOverride');
 };
 
-export const captureScreenshot = async (tabId: number, clip = null) => {
-    const command = clip ? { clip, format: 'png' } : { format: 'png' };
+const readFullClip = async (tabId: number) => {
+    const metrics = await sendDebug(tabId, 'Page.getLayoutMetrics');
+    const size = metrics.cssContentSize || metrics.contentSize || {};
+    return { height: Math.max(size.height || 1, 1), scale: 1, width: Math.max(size.width || 1, 1), x: 0, y: 0 };
+};
+
+export const captureScreenshot = async (tabId: number, clip = null, current = false) => {
+    const nextClip = clip || current ? clip : await readFullClip(tabId);
+    const command = nextClip ? { captureBeyondViewport: true, clip: nextClip, format: 'png', fromSurface: true } : { format: 'png', fromSurface: true };
     const result = await sendDebug(tabId, 'Page.captureScreenshot', command);
     return result.data || '';
 };

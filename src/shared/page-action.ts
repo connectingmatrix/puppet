@@ -26,6 +26,7 @@ export interface PageAction {
     button?: ButtonType;
     clearFirst?: boolean;
     clickCount?: number;
+    current?: boolean;
     deltaX?: number;
     deltaY?: number;
     enabled?: boolean;

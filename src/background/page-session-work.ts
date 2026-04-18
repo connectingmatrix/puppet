@@ -63,11 +63,11 @@ export const readLiveHtml = async (pageId: string, selector = '', frameId = 0, i
     return { html: await readPageHtml(page.tabId || 0, selector, frameId, index), pageId, selector, url: page.url };
 };
 
-export const readLiveShot = async (pageId: string, selector = '', fullPage = false) => {
+export const readLiveShot = async (pageId: string, selector = '', current = false) => {
     const page = readPage(pageId);
     const box = selector ? await readPageBox(page.tabId || 0, selector) : null;
-    const clip = !fullPage && box ? { height: Math.max(box.height, 1), scale: 1, width: Math.max(box.width, 1), x: Math.max(box.left, 0), y: Math.max(box.top, 0) } : null;
-    return { dataBase64: await captureScreenshot(page.tabId || 0, clip), mimeType: 'image/png', pageId };
+    const clip = box ? { height: Math.max(box.height, 1), scale: 1, width: Math.max(box.width, 1), x: Math.max(box.left, 0), y: Math.max(box.top, 0) } : null;
+    return { dataBase64: await captureScreenshot(page.tabId || 0, clip, current), mimeType: 'image/png', pageId };
 };
 
 export const listPageFrames = async (pageId: string) => {

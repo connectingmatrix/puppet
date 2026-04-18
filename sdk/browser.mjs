@@ -32,6 +32,17 @@ export class Browser {
         return () => { this.listeners = this.listeners.filter((item) => item.handler !== handler || item.name !== name || item.pageId !== pageId); };
     }
     async newPage(url = 'about:blank', options = {}) {
+        if (!(options.newTab || options.reuse === false)) {
+            const pages = await this.sessionPages();
+            const page = pages[0] || null;
+            if (page) {
+                this.sessionId = page.sessionId || this.sessionId;
+                let next = page;
+                if (url && url !== 'about:blank') next = new Page(this, await page.goto(url, options));
+                if (options.width && options.height) await next.setViewport({ height: options.height, width: options.width });
+                return next;
+            }
+        }
         const data = await requestJson(this.baseUrl, '/api/pages/open', 'POST', {
             pages: [{ height: options.height, role: options.role || `page-${Date.now()}`, url, waitUntil: options.waitUntil || 'load', width: options.width }],
             sessionId: this.sessionId || '',
