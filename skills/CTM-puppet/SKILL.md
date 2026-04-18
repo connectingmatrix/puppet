@@ -93,6 +93,8 @@ Useful files:
 Notes:
 - The opener resolves the extension URL from the explicit argument, `CTM_PUPPET_EXTENSION_URL`, live `/api/instances`, or `.ctm-puppet.local.json`.
 - `server.start({ port: CUSTOM_PORT })` returns structured port state and lets you target another CTM Puppet server for another Chrome instance.
+- `server.stop()` only clears the local SDK browser binding; it does not stop the shared listener.
+- Use `server.stop({ force: true })` only when intentionally killing an SDK-started listener.
 - `skills/CTM-puppet/scripts/start_ctm_puppet.sh EXTENSION_URL CUSTOM_PORT` starts and opens the matching port pair.
 - the opener appends `?port=` and `?server=` so each extension tab auto-binds to its own server port without manual settings changes
 - the opener exits without opening a new extension tab when the target server already has a connected instance

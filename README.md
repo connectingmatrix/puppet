@@ -59,6 +59,8 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `const { browser, status } = await server.start({ port: 4021 })` targets another CTM Puppet server port
 - `status` is `connected`, `server_ready_no_instance`, or `server_started_no_instance`
 - if `browser` is `null`, the server is healthy but no extension page is bound yet
+- `server.stop()` only clears the local SDK browser binding; it does not stop the shared CTM Puppet listener
+- use `server.stop({ force: true })` only when you intentionally want to kill a listener started by this SDK process
 - extension pages opened through `npm run open:extension` or the skill launcher bind to their own `?port=` / `?server=` URL params instead of sharing one manual setting
 - the opener does not create a new extension tab when the target server already has a connected instance
 - `await browser.newPage(url?, options?)` reuses the latest CTM Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first

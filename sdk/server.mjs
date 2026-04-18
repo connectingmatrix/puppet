@@ -15,6 +15,11 @@ const readState = async (baseUrl, status = '') => {
     if (!status || state.status === 'connected') return state;
     return { ...state, status };
 };
+const startProcess = (port) => {
+    const child = spawn('node', ['server/index.mjs'], { cwd: new URL('..', import.meta.url), detached: true, env: { ...process.env, PORT: port }, stdio: 'ignore' });
+    child.unref();
+    return child;
+};
 
 export class LocalServer {
     constructor(baseUrl = '') {
@@ -31,7 +36,7 @@ export class LocalServer {
         try {
             return readResult(baseUrl, port, await readState(baseUrl));
         } catch {}
-        this.process = spawn('node', ['server/index.mjs'], { cwd: new URL('..', import.meta.url), env: { ...process.env, PORT: port }, stdio: 'inherit' });
+        this.process = startProcess(port);
         const endsAt = Date.now() + 15000;
         while (Date.now() < endsAt) {
             try {
@@ -41,8 +46,9 @@ export class LocalServer {
         }
         throw new Error(`Timed out waiting for ${this.baseUrl} to start.`);
     }
-    stop() {
+    stop(options = {}) {
         delete globalThis.browser;
+        if (!(options.force || options.kill)) return;
         if (!this.process) return;
         this.process.kill();
         this.process = null;
