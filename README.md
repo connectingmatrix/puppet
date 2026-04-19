@@ -30,13 +30,33 @@ puppet server start --port 4017
 puppet server status --port 4017
 puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
 puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"PAGE","deltaY":800}]}'
-puppet pages data --json '{"pageId":"PAGE","selector":"body","snapshot":true}'
+puppet pages data --json '{"pageId":"PAGE","selector":"body"}'
 puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'
 puppet run ./inspect.mjs --timeout-ms 180000
 puppet api GET /api/health
 ```
 
 Request bodies can come from `--json`, `--file`, or `--stdin`. The raw API escape hatch is `puppet api METHOD /api/path`. Files passed to `puppet run` are server-side function bodies with `server`, `browser`, `args`, and `console` already in scope. Use `puppet help detail` for the API/helper return reference and `puppet help md` to print this README from the installed CLI.
+
+## Token-Safe Defaults
+
+Puppet is compact by default for REST and CLI responses. If a response is large, the server returns `{ "compact": true, "summary": ..., "artifact": { "path": "..." } }` and writes the full JSON under `~/.puppet/artifacts`.
+
+Use this pattern for Codex work:
+
+```js
+const state = await server.start({ port: 4017 });
+if (!state.browser) throw new Error(`Puppet not ready: ${state.status}`);
+const page = await state.browser.newPage('http://localhost:5173/u');
+return await page.evaluate(() => ({
+  title: document.title,
+  url: location.href,
+  ready: Boolean(document.querySelector('#app')),
+  text: document.body.innerText.slice(0, 500)
+}));
+```
+
+Avoid returning `snapshot:true`, full `body` HTML, base64 screenshots, or all-size compare output directly into Codex. If you need the full payload for offline inspection, pass `"raw": true` or read `artifact.path` outside the chat context.
 
 ## SDK First
 
@@ -121,10 +141,10 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.graphql(query, { variables, url, auth })`
 - `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
-- `await page.data(selector, { snapshot })`
+- `await page.data(selector, { snapshot, compact })`
 - `await page.screenshot({ selector, current, path })` captures the full page by default; pass `{ current: true }` for only the visible viewport
 - `await page.compare(otherPage, options?)`
-- `await page.compareSelector(selector, otherPage.selectorTree(selector), { snapshot: true })`
+- `await page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`
 - `await page.frames()`
 - `await page.iframes()`
 - `page.frame(frameId)` and `page.iframe[frameId]`
@@ -300,10 +320,10 @@ console.log(accessToken, payload.data, response.status);
   raw: `{ "type": "change_screen_size", "pageId": "PAGE_ID", "width": 1024, "height": 700 }`
 - `navigate_to_url`: `await page.goto('https://example.com', { waitUntil: 'load' })`
   raw: `{ "type": "navigate_to_url", "pageId": "PAGE_ID", "url": "https://example.com", "waitUntil": "load" }`
-- `get_page_diff`: `await left.compare(right, { selector: '.card', snapshot: true })`
-  raw: `{ "type": "get_page_diff", "leftPageId": "LEFT_ID", "rightPageId": "RIGHT_ID", "selector": ".card", "snapshot": true }`
-- `get_page_data`: `await page.data('.card', { snapshot: true })`
-  raw: `{ "type": "get_page_data", "pageId": "PAGE_ID", "selector": ".card", "snapshot": true }`
+- `get_page_diff`: `await left.compare(right, { selector: '.card', compact: true })`
+  raw: `{ "type": "get_page_diff", "leftPageId": "LEFT_ID", "rightPageId": "RIGHT_ID", "selector": ".card" }`
+- `get_page_data`: `await page.data('.card', { compact: true })`
+  raw: `{ "type": "get_page_data", "pageId": "PAGE_ID", "selector": ".card" }`
 - `get_page_html`: `await page.html('#main')`
   raw: `{ "type": "get_page_html", "pageId": "PAGE_ID", "selector": "#main" }`
 - `screenshot_page`: `await page.screenshot({ path: '/tmp/full.png' })`
@@ -333,7 +353,7 @@ Supported selector syntax:
 ```json
 {
   "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "load" }],
-  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.data('#search', { snapshot: true });",
+  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.evaluate(() => ({ value: (document.querySelector('#search') || {}).value || '', options: [...document.querySelectorAll('[role=option]')].length }));",
   "closeOnExit": true
 }
 ```
@@ -353,6 +373,7 @@ Response keys:
 - `diff.tree_diff` contains only changed nodes and changed styles
 - `runs` is keyed by viewport like `runs["1024x700"]`
 - `snapshot` is omitted unless you request it
+- large API responses are summarized and stored in `~/.puppet/artifacts` unless `raw:true` is passed
 
 ## Included Example Pages
 
@@ -369,6 +390,8 @@ Runnable examples:
 - `puppet run /Users/abeer/dev/chrome_extension_utils/examples/puppet-run.mjs --timeout-ms 180000`
 - `node /Users/abeer/dev/chrome_extension_utils/examples/google-suite.mjs`
 - `node /Users/abeer/dev/chrome_extension_utils/examples/sample-suite.mjs`
+- `node /Users/abeer/dev/chrome_extension_utils/examples/giga-workflow-actions.mjs open-designer`
+- `/Users/abeer/dev/chrome_extension_utils/examples/giga-workflow-actions.md`
 - `/Users/abeer/dev/chrome_extension_utils/examples/puppet-run.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/google-suite.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/sample-suite.mjs`

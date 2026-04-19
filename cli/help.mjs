@@ -26,6 +26,7 @@ Global options:
 
 Help:
   puppet configure    Stores the extension URL in ~/.puppet/config.json.
+  Default API output is compact. Large full JSON is written to ~/.puppet/artifacts; pass "raw":true only when necessary.
   puppet help detail  Lists all APIs, CLI usage, helper functions, and return shapes.
   puppet help md      Prints the current README.md integration guide.
   puppet help COMMAND Prints focused examples for pages, run, compare, or server.`;
@@ -37,7 +38,7 @@ Commands:
   puppet pages active [--session-id SESSION]
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"...","deltaY":800}]}'
-  puppet pages data --json '{"pageId":"...","selector":"body","snapshot":true}'
+  puppet pages data --json '{"pageId":"...","selector":"body"}'
   puppet pages diff --json '{"leftPageId":"...","rightPageId":"...","selector":"body"}'
   puppet pages html --json '{"pageId":"...","selector":"main"}'; puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.png"}'
   puppet pages close --json '{"pageId":"..."}'
@@ -66,16 +67,16 @@ Sample script:
   if (!state.browser) throw new Error('Puppet not ready: ' + state.status);
   const page = await state.browser.newPage('https://example.com');
   await page.waitForSelector('body');
-  return await page.data('body', { snapshot: true });`;
+  return await page.evaluate(() => ({ title: document.title, url: location.href }));`;
 
 const compare = `Puppet compare and inspect
 
 Commands:
   puppet compare pages --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'
   puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":".app"}'
-  puppet inspect selector --json '{"url":"https://example.com","selector":"body","snapshot":true}'
+  puppet inspect selector --json '{"url":"https://example.com","selector":"body"}'
 
-Output uses key-value objects for classes, computed styles, style diffs, class diffs, and tree styles.`;
+Default output is compact when a payload is large. Add "raw":true only when code needs the full JSON.`;
 
 const server = `Puppet server
 

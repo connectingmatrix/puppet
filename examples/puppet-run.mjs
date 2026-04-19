@@ -5,4 +5,8 @@ await page.locator('::-p-aria(Search)').fill('gamma');
 await page.waitForSelector("[role='listbox']");
 await page.click("[role='option']", { index: 1 });
 await page.waitForSelector('#search');
-return await page.data('#search', { snapshot: true });
+return await page.evaluate(() => ({
+    options: document.querySelectorAll('[role="option"]').length,
+    title: (document.querySelector('#results-title') || {}).textContent || '',
+    value: (document.querySelector('#search') || {}).value || ''
+}));

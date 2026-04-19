@@ -47,6 +47,7 @@ export class Browser {
         }
         const data = await requestJson(this.baseUrl, '/api/pages/open', 'POST', {
             pages: [{ height: options.height, role: options.role || `page-${Date.now()}`, url, waitUntil: options.waitUntil || 'load', width: options.width }],
+            raw: true,
             sessionId: this.sessionId || '',
             snapshot: false
         });
@@ -56,14 +57,14 @@ export class Browser {
     }
     async pages() {
         this.openLive();
-        const data = await requestJson(this.baseUrl, '/api/pages/browser');
+        const data = await requestJson(this.baseUrl, '/api/pages/browser?raw=1');
         const items = [];
         for (const item of data.items || []) items.push(new Page(this, item));
         return items;
     }
     async sessionPages() {
         this.openLive();
-        const data = await requestJson(this.baseUrl, `/api/pages/active?sessionId=${encodeURIComponent(this.sessionId || '')}`);
+        const data = await requestJson(this.baseUrl, `/api/pages/active?raw=1&sessionId=${encodeURIComponent(this.sessionId || '')}`);
         const items = [];
         for (const item of data.items || []) items.push(new Page(this, item));
         return items;

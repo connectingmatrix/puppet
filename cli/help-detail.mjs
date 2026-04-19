@@ -17,13 +17,13 @@ Live page APIs:
   GET  /api/pages/browser     Returns all visible browser tabs as bindable pages.
   POST /api/pages/open        Body { pages, sessionId?, snapshot?, actions? }. Returns { sessionId, pages }.
   POST /api/pages/actions     Body { actions }. Returns { results }.
-  POST /api/pages/data        Body { pageId, selector, path?, snapshot? }. Returns selector detail and optional snapshot.
-  POST /api/pages/diff        Body { leftPageId, rightPageId, selector, path?, snapshot? }. Returns diff.
-  POST /api/pages/html        Body { pageId, selector?, frameId?, index? }. Returns { html, pageId, selector, url }.
+  POST /api/pages/data        Body { pageId, selector, path?, snapshot?, raw? }. Compact by default when large.
+  POST /api/pages/diff        Body { leftPageId, rightPageId, selector, path?, snapshot?, raw? }. Compact by default when large.
+  POST /api/pages/html        Body { pageId, selector?, frameId?, index?, raw? }. Compact by default when large.
   POST /api/pages/frames      Body { pageId }. Returns frame metadata.
-  POST /api/pages/screenshot Body { pageId, selector?, current? }. Returns { mimeType, dataBase64, pageId }.
+  POST /api/pages/screenshot Body { pageId, selector?, current?, raw? }. Compact by default when large.
   POST /api/pages/close       Body { pageId }. Returns { pageId }.
-  POST /api/pages/run         Body { script, sessionId?, pages?, args?, timeoutMs?, closeOnExit? }. Returns { logs, pageIds, result, sessionId }.
+  POST /api/pages/run         Body { script, sessionId?, pages?, args?, timeoutMs?, closeOnExit?, raw? }. Compact by default when large.
 
 Legacy one-shot APIs:
   POST /api/compare/pages     Body { leftUrl, rightUrl, selector?, path?, sizes?, snapshot?, actions? }.
@@ -35,7 +35,7 @@ CLI API equivalents:
   puppet pages active --session-id SESSION
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"PAGE","selector":"button"}]}'
-  puppet pages data --json '{"pageId":"PAGE","selector":"body","snapshot":true}'
+  puppet pages data --json '{"pageId":"PAGE","selector":"body"}'
   puppet pages diff --json '{"leftPageId":"LEFT","rightPageId":"RIGHT","selector":"body"}'
   puppet pages html --json '{"pageId":"PAGE","selector":"main"}'
   puppet pages frames --json '{"pageId":"PAGE"}'; puppet pages screenshot --json '{"pageId":"PAGE","current":true}'
@@ -67,8 +67,8 @@ SDK page helpers and returns:
   page.keyboard.press(key) -> { key }.
   page.evaluate(fnOrScript, ...args) -> serializable page-context result.
   page.html(selector?) -> { ok, pageId, html, selector, url }.
-  page.data(selector, { snapshot }) -> selector detail and optional snapshot.
-  page.screenshot({ path?, selector?, current? }) -> { ok, dataBase64, mimeType, pageId } and writes path when supplied.
+  page.data(selector, { snapshot, compact }) -> selector detail and optional snapshot.
+  page.screenshot({ path?, selector?, current? }) -> writes path when supplied and omits base64 from the returned object unless raw:true is passed.
   page.compare(page2, options?) and page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
   page.frames(), page.iframes() -> frame metadata array. page.frame(frameId), page.iframe[frameId] -> frame-scoped Page.
   page.request(options) -> HTTP response data from current session context.
@@ -90,6 +90,9 @@ Network helpers:
   page.waitForRequest(match), page.waitForResponse(match), page.waitForGraphql(match) -> matching network event.
 
 Output rules:
+  Large REST/CLI payloads return { compact:true, summary, artifact }. Read artifact.path only when a full payload is truly needed.
+  SDK helpers request raw data internally so scripts can inspect data; /api/pages/run compacts the final returned value by default.
+  Prefer page.evaluate() for targeted facts. Avoid snapshot:true, full HTML, screenshots, and all-size compare unless necessary.
   classes, snapshot.classes, snapshot.style, diff.classes_diff, diff.styles_diff, tree styles, and tree diff styles are key-value objects.
   snapshot is omitted unless snapshot:true is requested.
   runs are keyed by viewport, for example runs["1024x700"].`;

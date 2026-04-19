@@ -47,13 +47,13 @@ export class Page {
     graphql(query, options = {}) { return runPageGraphql(this, query, options); }
     url() { return this.evaluate(() => location.href); }
     location(part = '') { return part ? this.evaluate((name) => location[name] || '', part) : this.evaluate(() => ({ hash: location.hash, host: location.host, hostname: location.hostname, href: location.href, origin: location.origin, pathname: location.pathname, port: location.port, protocol: location.protocol, search: location.search })); }
-    html(selector = '', options = {}) { return requestJson(this.baseUrl, '/api/pages/html', 'POST', { frameId: this.frameId, index: options.index || 0, pageId: this.pageId, selector }); }
-    data(selector, options = {}) { return requestJson(this.baseUrl, '/api/pages/data', 'POST', { pageId: this.pageId, path: options.path || 'root', selector, snapshot: options.snapshot || false }); }
-    async screenshot(options = {}) { const data = await requestJson(this.baseUrl, '/api/pages/screenshot', 'POST', { current: Boolean(options.current) || options.fullPage === false, pageId: this.pageId, selector: options.selector || '' }); await saveBase64(options.path || '', data.dataBase64 || ''); return data; }
-    compare(page, options = {}) { return requestJson(this.baseUrl, '/api/pages/diff', 'POST', { leftPageId: this.pageId, path: options.path || 'root', rightPageId: page.pageId, selector: options.selector || 'body', snapshot: options.snapshot || false }); }
-    compareSelector(selector, page, options = {}) { return requestJson(this.baseUrl, '/api/pages/diff', 'POST', { leftPageId: this.pageId, leftSelector: selector, path: options.path || 'root', rightPageId: page.pageId, rightSelector: page.selector || selector, selector, snapshot: options.snapshot || false }); }
+    html(selector = '', options = {}) { return requestJson(this.baseUrl, '/api/pages/html', 'POST', { frameId: this.frameId, index: options.index || 0, pageId: this.pageId, raw: options.compact ? false : true, selector }); }
+    data(selector, options = {}) { return requestJson(this.baseUrl, '/api/pages/data', 'POST', { pageId: this.pageId, path: options.path || 'root', raw: options.compact ? false : true, selector, snapshot: options.snapshot || false }); }
+    async screenshot(options = {}) { const data = await requestJson(this.baseUrl, '/api/pages/screenshot', 'POST', { current: Boolean(options.current) || options.fullPage === false, pageId: this.pageId, raw: true, selector: options.selector || '' }); await saveBase64(options.path || '', data.dataBase64 || ''); if (options.path && !options.raw) delete data.dataBase64; return data; }
+    compare(page, options = {}) { return requestJson(this.baseUrl, '/api/pages/diff', 'POST', { leftPageId: this.pageId, path: options.path || 'root', raw: options.compact ? false : true, rightPageId: page.pageId, selector: options.selector || 'body', snapshot: options.snapshot || false }); }
+    compareSelector(selector, page, options = {}) { return requestJson(this.baseUrl, '/api/pages/diff', 'POST', { leftPageId: this.pageId, leftSelector: selector, path: options.path || 'root', raw: options.compact ? false : true, rightPageId: page.pageId, rightSelector: page.selector || selector, selector, snapshot: options.snapshot || false }); }
     selectorTree(selector) { return { pageId: this.pageId, selector }; }
-    async frames() { const data = await requestJson(this.baseUrl, '/api/pages/frames', 'POST', { pageId: this.pageId }); return data.items || []; }
+    async frames() { const data = await requestJson(this.baseUrl, '/api/pages/frames', 'POST', { pageId: this.pageId, raw: true }); return data.items || []; }
     frame(frameId) { return new Page(this.browser, this, Number(frameId) || 0); }
     iframes() { return this.frames(); }
     close() { return requestJson(this.baseUrl, '/api/pages/close', 'POST', { pageId: this.pageId }); }

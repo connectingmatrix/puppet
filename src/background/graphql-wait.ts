@@ -45,7 +45,7 @@ export const watchGraphql = (tabId: number) => {
             if (seen && !active.size && Date.now() - lastChange >= idleMs) resolve();
             else if (!seen && Date.now() - startedAt >= graceMs) resolve();
             else if (Date.now() - startedAt >= timeoutMs) reject(new Error('Timed out waiting for GraphQL requests to finish.'));
-            else window.setTimeout(check, 200);
+            else setTimeout(check, 200);
         };
         check();
     });

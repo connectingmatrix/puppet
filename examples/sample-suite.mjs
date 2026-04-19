@@ -14,7 +14,7 @@ await form.submit('#demo-form');
 const submitted = await (await form.waitForSelector('#submitted')).evaluate((node) => node.textContent);
 const left = await browser.newPage('http://127.0.0.1:4017/examples/compare-left.html', { waitUntil: 'load' });
 const right = await browser.newPage('http://127.0.0.1:4017/examples/compare-right.html', { newTab: true, waitUntil: 'load' });
-const diff = await left.compare(right, { selector: '.card', snapshot: true });
+const diff = await left.compare(right, { selector: '.card' });
 console.log(JSON.stringify({ diffKeys: Object.keys(diff.left.diff.styles_diff || {}), searchTitle, submitted }, null, 2));
 await browser.close();
 server.stop();

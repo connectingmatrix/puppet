@@ -5,8 +5,13 @@ import { readTabPage } from '@/src/background/page-store';
 
 const items = new Map<string, Record<string, unknown>>();
 let ready = false;
+const previewLimit = 1200;
 
 const readId = (tabId: number, requestId = '') => `${tabId}:${requestId}`;
+const readPreview = (value = '') => {
+    const text = `${value || ''}`;
+    return text.length > previewLimit ? `${text.slice(0, previewLimit)}...[truncated ${text.length - previewLimit} chars]` : text;
+};
 const readTextBody = async (tabId: number, requestId = '', type = '') => {
     if (type && type !== 'Fetch' && type !== 'XHR' && type !== 'Document') return '';
     try {
@@ -26,7 +31,8 @@ const readPayload = (params: Record<string, unknown>, pageId: string) => {
     const request = params.request || {};
     const body = `${request.postData || ''}`;
     return {
-        body,
+        body: readPreview(body),
+        bodyBytes: body.length,
         headers: readHeaders(request.headers || {}),
         method: `${request.method || ''}`,
         operationName: readGraphqlName(body),
@@ -63,14 +69,17 @@ export const ensureNetworkEvents = () => {
         items.delete(key);
         if (!item) return;
         const body = method === 'Network.loadingFinished' ? await readTextBody(tabId, `${params.requestId || ''}`, `${item.resourceType || ''}`) : '';
+        const requestBody = `${item.body || ''}`;
         emitLive('network.response', {
-            body,
+            body: readPreview(body),
+            bodyBytes: body.length,
             errorText: `${params.errorText || ''}`,
             headers: item.responseHeaders || {},
             method: `${item.method || ''}`,
             operationName: `${item.operationName || ''}`,
             pageId: `${item.pageId || ''}`,
-            requestBody: `${item.body || ''}`,
+            requestBody: readPreview(requestBody),
+            requestBodyBytes: Number(item.bodyBytes || requestBody.length),
             requestHeaders: item.headers || {},
             requestId: `${item.requestId || ''}`,
             resourceType: `${item.resourceType || ''}`,
