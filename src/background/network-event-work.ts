@@ -13,7 +13,8 @@ const readPreview = (value = '') => {
     return text.length > previewLimit ? `${text.slice(0, previewLimit)}...[truncated ${text.length - previewLimit} chars]` : text;
 };
 const readTextBody = async (tabId: number, requestId = '', type = '') => {
-    if (type && type !== 'Fetch' && type !== 'XHR' && type !== 'Document') return '';
+    const resource = `${type || ''}`.toLowerCase();
+    if (resource && resource !== 'fetch' && resource !== 'xhr' && resource !== 'document') return '';
     try {
         const result = await sendDebug(tabId, 'Network.getResponseBody', { requestId });
         if (!(result && result.base64Encoded && result.body)) return `${result && result.body || ''}`;
