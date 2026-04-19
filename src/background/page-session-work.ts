@@ -27,7 +27,7 @@ export const openLivePages = async (instanceId: string, sessionId: string, items
     emit('session.opened', { instanceId, sessionId }, sessionId);
     for (const item of items) {
         const pageId = crypto.randomUUID();
-        const tabId = await openPageTab(item.url, settings.debugForeground, item.waitUntil || 'load');
+        const tabId = await openPageTab(item.url, settings.debugForeground, item.waitUntil || 'document');
         if (item.width && item.height) await resizeViewport(tabId, { height: item.height, name: item.role || 'page', width: item.width });
         const meta = await readTabMeta(tabId);
         const page = saveLivePage({ height: item.height || meta.height, instanceId, pageId, pageName: meta.title, pageStats: { cpu: 0, heapUsage: 0, ram: 0 }, pageUrl: meta.url, recordingIds: [], role: item.role || 'page', sessionId, status: 'ready', tabId, title: meta.title, url: meta.url, width: item.width || meta.width }) as LivePage;

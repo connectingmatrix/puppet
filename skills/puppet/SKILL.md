@@ -28,7 +28,7 @@ Default port behavior:
 - For a custom Chrome profile/port, run `puppet server start --port PORT`, then `puppet extension open --port PORT`.
 
 Preferred CLI workflows:
-- Open pages: `puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'`
+- Open pages: `puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"document"}]}'`
 - List live pages: `puppet pages active`
 - Run actions: `puppet pages actions --json '{"actions":[{"type":"click","pageId":"PAGE","selector":"button"}]}'`
 - Capture data: `puppet pages data --json '{"pageId":"PAGE","selector":"body"}'`
@@ -52,6 +52,8 @@ Script scope for `puppet run` and `puppet exec`:
 - Throw when `browser` is null: `if (!state.browser) throw new Error('Puppet not ready: ' + state.status)`.
 - `browser.pages()` lists all currently open browser tabs the extension can bind.
 - `browser.newPage(url, options)` reuses a controlled tab by default; pass `{ newTab: true }` only for intentional extra tabs.
+- Default navigation waits for `document`, meaning the page is scriptable. Use explicit `waitForSelector(...)` for app readiness and strict `load` only when every resource must finish.
+- If strict `load` or network idle times out, read the error message; it includes pending request URLs for Vite/module hangs.
 - Use `await browser.close()` to close session pages opened by that browser.
 
 SDK capabilities:

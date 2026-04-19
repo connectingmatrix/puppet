@@ -9,7 +9,7 @@ Usage:
   puppet configure show
   puppet server foreground [--port 4017]; puppet server status [--port 4017]
   puppet instances [--port 4017]
-  puppet pages open --json '{"pages":[{"url":"https://example.com"}]}'
+  puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"document"}]}'
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"...","selector":"button"}]}'
   puppet run ./script.mjs [--port 4017] [--timeout-ms 120000]
   puppet exec --eval "const state = await server.start(); return state.status"
@@ -34,7 +34,7 @@ Help:
 const pages = `Puppet page API commands
 
 Commands:
-  puppet pages open --json '{"pages":[{"role":"page","url":"https://example.com","waitUntil":"load"}]}'
+  puppet pages open --json '{"pages":[{"role":"page","url":"https://example.com","waitUntil":"document"}]}'
   puppet pages active [--session-id SESSION]
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"...","deltaY":800}]}'

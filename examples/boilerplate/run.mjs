@@ -2,7 +2,7 @@ import server from 'puppet';
 
 const { browser, status } = await server.start({ port: 4017 });
 if (!browser) throw new Error(`Puppet not ready: ${status}. Reload the installed extension or bind the custom-port extension page.`);
-const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html', { waitUntil: 'load' });
+const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html', { waitUntil: 'document' });
 page.on('console', (event) => console.log('PAGE LOG:', event.text()));
 await page.locator("::-p-aria(Search)").fill('gamma');
 await page.waitForSelector("[role='listbox']");

@@ -9,7 +9,7 @@ const ACTION = process.argv[2] || 'open-designer';
 const pageScript = `
 const workflowName = ${JSON.stringify(WORKFLOW_NAME)};
 const nodeId = ${JSON.stringify(NODE_ID)};
-const page = await browser.newPage(${JSON.stringify(APP_URL)}, { waitUntil: 'load', width: 1680, height: 1050 });
+const page = await browser.newPage(${JSON.stringify(APP_URL)}, { waitUntil: 'document', width: 1680, height: 1050 });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const waitFor = (selector) => page.waitForSelector(selector, { timeoutMs: 30000 });
 const click = async (selector) => { await waitFor(selector); await page.click(selector); };

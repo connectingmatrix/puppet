@@ -1,4 +1,5 @@
-import { closeDebugTab, ensureDebugTab } from '@/src/background/debugger-work';
+import { clearPendingRequests } from '@/src/background/debug-live-work';
+import { closeDebugTab, ensureDebugTab, sendDebug } from '@/src/background/debugger-work';
 import { runPageEval } from '@/src/background/page-eval-work';
 import { uploadFiles } from '@/src/background/file-upload-work';
 import { watchGraphql } from '@/src/background/graphql-wait';
@@ -9,7 +10,6 @@ import { runPageDomAction } from '@/src/background/page-dom-work';
 import { readPageScriptResult, runPageScript } from '@/src/background/page-script-read';
 import { runFrameScript } from '@/src/background/page-script-work';
 import { runUserAction } from '@/src/background/page-user-run';
-import { waitForTab } from '@/src/background/tab-wait-work';
 import { waitForPageTarget } from '@/src/background/page-wait-read';
 import { waitForPageRoot } from '@/src/background/page-wait';
 import { readNodeDetail, readDomSnapshot } from '@/src/sidepanel/lib/page-readers';
@@ -21,24 +21,27 @@ const readWaitError = (selector: string, state: { loading: boolean; title: strin
     ? `The page is still showing a loading shell while waiting for ${selector}. Final URL: ${state.url}. Final title: ${state.title}.`
     : `No visible element matches ${selector} after waiting for GraphQL and page render. Final URL: ${state.url}. Final title: ${state.title}.`;
 
-export const openPageTab = async (url: string, active: boolean, waitUntil = 'load') => {
-    const tab = await chrome.tabs.create({ active, url });
+export const openPageTab = async (url: string, active: boolean, waitUntil = 'document') => {
+    const tab = await chrome.tabs.create({ active, url: 'about:blank' });
     const tabId = tab.id || 0;
-    await waitForTab(tabId);
     await ensureDebugTab(tabId);
+    clearPendingRequests(tabId);
+    await sendDebug(tabId, 'Page.navigate', { url });
     await waitForLoadState(tabId, waitUntil as any);
     return tabId;
 };
 
-export const updatePageTab = async (tabId: number, url: string, waitUntil = 'load') => {
-    await chrome.tabs.update(tabId, { url });
-    await waitForTab(tabId);
+export const updatePageTab = async (tabId: number, url: string, waitUntil = 'document') => {
+    await ensureDebugTab(tabId);
+    clearPendingRequests(tabId);
+    await sendDebug(tabId, 'Page.navigate', { url });
     await waitForLoadState(tabId, waitUntil as any);
 };
 
-export const reloadPageTab = async (tabId: number, waitUntil = 'load') => {
-    await chrome.tabs.reload(tabId);
-    await waitForTab(tabId);
+export const reloadPageTab = async (tabId: number, waitUntil = 'document') => {
+    await ensureDebugTab(tabId);
+    clearPendingRequests(tabId);
+    await sendDebug(tabId, 'Page.reload');
     await waitForLoadState(tabId, waitUntil as any);
 };
 
