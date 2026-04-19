@@ -8,6 +8,7 @@ export class Browser {
         this.baseUrl = readBaseUrl(baseUrl);
         this.live = new LiveSocket(this.baseUrl);
         this.listeners = [];
+        this.keepPagesOpen = false;
         this.network = new NetworkStore(this);
         this.sessionId = '';
         this.live.listen('', (event) => {
@@ -69,11 +70,17 @@ export class Browser {
         for (const item of data.items || []) items.push(new Page(this, item));
         return items;
     }
-    async close() {
+    async close(options = {}) {
+        if (options.keepPagesOpen || this.keepPagesOpen) {
+            this.live.close();
+            this.sessionId = '';
+            return { keptPagesOpen: true };
+        }
         const pages = await this.sessionPages();
         for (const page of pages) await page.close();
         this.live.close();
         this.sessionId = '';
+        return { keptPagesOpen: false };
     }
 }
 

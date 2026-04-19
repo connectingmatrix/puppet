@@ -141,6 +141,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - if `browser` is `null`, the server is healthy but no extension instance has registered yet
 - `server.stop()` only clears the local SDK browser binding; it does not stop the shared Puppet listener
 - use `server.stop({ force: true })` only when you intentionally want to kill a listener started by this SDK process
+- use `server.start({ keepPagesOpen: true })` or `browser.close({ keepPagesOpen: true })` to disconnect the SDK without closing controlled tabs
 - default-port automation does not require an extension page; the background worker registers itself with the server
 - the sidepanel status lamp mirrors the singleton background worker; sidepanels do not register separate socket instances
 - custom ports are handled by saving the server URL in extension settings, then the background worker reconnects as the same browser instance
@@ -151,7 +152,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
 - `await browser.pages()` returns all open browser tabs bound as Puppet pages
 - `await browser.sessionPages()` returns only pages opened in the current Puppet session
-- `await browser.close()`
+- `await browser.close()` closes session pages; `await browser.close({ keepPagesOpen: true })` leaves tabs open
 - `await page.goto(url, options?)`
 - `await page.reload(options?)`
 - `await page.setViewport({ width, height })`

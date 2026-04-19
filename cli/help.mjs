@@ -13,6 +13,7 @@ Usage:
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"...","selector":"button"}]}'
   puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard"]}'
   puppet run ./script.mjs [--port 4017] [--timeout-ms 120000]
+  puppet run ./script.mjs --keep-pages-open
   puppet exec --eval "const state = await server.start(); return state.status"
   puppet api GET /api/health
   puppet api POST /api/pages/data --json '{"pageId":"...","selector":"body"}'

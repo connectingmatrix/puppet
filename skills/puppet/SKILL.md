@@ -58,6 +58,7 @@ Script scope for `puppet run` and `puppet exec`:
 - `browser.pages()` lists all currently open browser tabs the extension can bind.
 - `browser.newPage(url, options)` reuses a controlled tab by default; pass `{ newTab: true }` only for intentional extra tabs.
 - Use `await browser.close()` to close session pages opened by that browser.
+- For anti-bot sensitive sites, use `server.start({ keepPagesOpen: true })` and `browser.close({ keepPagesOpen: true })` so the SDK disconnects without closing tabs.
 
 SDK capabilities:
 - Navigation: `page.goto`, `page.reload`, `page.setViewport`, `page.url`, `page.location`.

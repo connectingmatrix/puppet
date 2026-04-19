@@ -6,7 +6,7 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 const readConsole = (logs) => ({ error: (...args) => logs.push({ level: 'error', text: args.join(' ') }), log: (...args) => logs.push({ level: 'log', text: args.join(' ') }), warn: (...args) => logs.push({ level: 'warn', text: args.join(' ') }) });
 const readRunMs = (payload) => Number(payload.timeoutMs) || 120000;
 const stopRun = async (browser, control, payload) => {
-    if (payload.closeOnExit) await browser.close();
+    if (payload.closeOnExit) await browser.close({ keepPagesOpen: Boolean(payload.keepPagesOpen) });
     await control.stop();
 };
 
@@ -18,6 +18,7 @@ export const runScript = async (baseUrl, payload) => {
             const port = `${options.port || new URL(browser.baseUrl).port || '4017'}`;
             const nextBaseUrl = `http://127.0.0.1:${port}`;
             browser.setBaseUrl(nextBaseUrl);
+            browser.keepPagesOpen = Boolean(options.keepPagesOpen || payload.keepPagesOpen);
             const state = await readServerState(nextBaseUrl);
             const result = { baseUrl: nextBaseUrl, browser: state.status === 'connected' ? browser : null, extensionUrl: state.extensionUrl, instanceId: state.instanceId, port, status: state.status };
             globalThis.browser = result.browser;

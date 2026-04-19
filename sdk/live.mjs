@@ -6,6 +6,11 @@ const readSocketUrl = (baseUrl) => {
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${url}`;
 };
+const closeSocket = (socket) => {
+    if (!socket) return;
+    socket.onerror = () => {};
+    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.close();
+};
 
 export class LiveSocket {
     constructor(baseUrl = '') {
@@ -40,7 +45,7 @@ export class LiveSocket {
     open(sessionId = '') {
         const next = sessionId || '';
         if (this.socket && this.sessionId === next && this.socket.readyState !== WebSocket.CLOSED && this.socket.readyState !== WebSocket.CLOSING) return;
-        if (this.socket) this.socket.close();
+        closeSocket(this.socket);
         this.sessionId = next;
         this.socket = new WebSocket(readSocketUrl(this.baseUrl));
         this.socket.onmessage = (event) => {
@@ -71,7 +76,7 @@ export class LiveSocket {
         });
     }
     close() {
-        if (this.socket) this.socket.close();
+        closeSocket(this.socket);
         this.socket = null;
         this.clear();
     }

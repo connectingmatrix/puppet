@@ -58,7 +58,7 @@ SDK browser helpers and returns:
   server.start({ port }) -> { browser, status, port, baseUrl, extensionUrl, instanceId }.
   browser.newPage(url?, options?) -> Page. Reuses a controlled page unless newTab or reuse:false is passed.
   browser.pages() -> Page[] for visible tabs. browser.sessionPages() -> Page[] for the current session.
-  browser.close() -> closes session pages and clears live socket state.
+  browser.close() -> closes session pages and clears live socket state. browser.close({ keepPagesOpen:true }) leaves tabs open.
 
 SDK page helpers and returns:
   page.goto(url, options?), page.reload(options?), page.setViewport(size) -> public page metadata.
