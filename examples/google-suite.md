@@ -51,8 +51,7 @@ curl -s -X POST http://127.0.0.1:4017/api/pages/data \
   -H 'content-type: application/json' \
   --data '{
     "pageId": "PAGE_ID",
-    "selector": "#search",
-    "snapshot": true
+    "selector": "#search"
   }'
 ```
 

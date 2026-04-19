@@ -51,4 +51,4 @@ Stable selectors:
 [data-cy="workflow-play-server"]
 ```
 
-Token rule: this script returns only `{ record, snapshot }`. Use `page.evaluate()` for targeted facts. Do not return `page.data(..., { snapshot: true })` or full compare payloads unless you also request compact output and read the artifact path.
+Token rule: this script returns only small targeted facts. Snapshot output is hard disabled. Use `page.evaluate()` for targeted facts and do not return full compare payloads unless you also request compact output and read the artifact path.

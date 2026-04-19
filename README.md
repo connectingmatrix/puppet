@@ -57,7 +57,7 @@ return await page.evaluate(() => ({
 }));
 ```
 
-Avoid returning `snapshot:true`, full `body` HTML, base64 screenshots, or all-size compare output directly into Codex. If you need the full payload for offline inspection, pass `"raw": true` or read `artifact.path` outside the chat context.
+Snapshot output is hard disabled in Puppet. Avoid returning full `body` HTML, base64 screenshots, or all-size compare output directly into Codex. If you need the full payload for offline inspection, pass `"raw": true` or read `artifact.path` outside the chat context.
 
 ## Compact Route Compare
 
@@ -178,7 +178,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.graphql(query, { variables, url, auth })`
 - `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
-- `await page.data(selector, { snapshot, compact })`
+- `await page.data(selector, { compact })`; snapshot output is hard disabled
 - `await page.screenshot({ selector, current, path })` captures the full page by default; pass `{ current: true }` for only the visible viewport
 - `await page.compare(otherPage, options?)`
 - `await page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`
@@ -404,13 +404,12 @@ Response keys:
 
 ## Output Shape
 
-- `classes`, `snapshot.classes`, `snapshot.style`, `diff.classes_diff`, `diff.styles_diff`, tree `styles`, and tree diff `styles` are key-value objects
+- `classes`, `diff.classes_diff`, `diff.styles_diff`, tree `styles`, and tree diff `styles` are key-value objects
 - `diff.classes_diff[className]` is `applied` or `missing class`
 - `diff.styles_diff[propertyName]` is that side’s changed computed value
-- `snapshot.tree` is keyed by labels like `< span >.title`
 - `diff.tree_diff` contains only changed nodes and changed styles
 - `runs` is keyed by viewport like `runs["1024x700"]`
-- `snapshot` is omitted unless you request it
+- `snapshot` is always omitted because snapshot output is hard disabled
 - large API responses are summarized and stored in `~/.puppet/artifacts` unless `raw:true` is passed
 
 ## Included Example Pages

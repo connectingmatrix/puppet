@@ -1,4 +1,5 @@
 import { readTreeDiff, readTreeSnapshot } from '@/src/background/tree-shape';
+import { readSnapshotFlag } from '@/src/shared/snapshot-policy';
 
 const readClasses = (names) => {
     const result = {};
@@ -27,9 +28,9 @@ const readStyleDiff = (page, other) => {
     return result;
 };
 const readSnapshot = (page) => ({ classes: readClasses(page.detail.classes), error: page.snapshot.error, html: page.snapshot.html, rootLabel: page.snapshot.rootLabel, selector: page.snapshot.selector, style: readStyles(page.detail.styles), tree: readTreeSnapshot(page.snapshot.tree) });
-const readSide = (page, other, snapshot, tree_diff) => {
+const readSide = (page, other, _snapshot, tree_diff) => {
     const result = { box: page.detail.box, classes: readClasses(page.detail.classes), diff: { classes_diff: readClassDiff(page, other), styles_diff: readStyleDiff(page, other), tree_diff }, error: page.detail.error || page.snapshot.error, html: page.detail.html, label: page.detail.label, path: page.detail.path };
-    if (snapshot) result.snapshot = readSnapshot(page);
+    if (readSnapshotFlag()) result.snapshot = readSnapshot(page);
     return result;
 };
 
@@ -38,8 +39,8 @@ export const readCompareResult = (left, right, snapshot) => {
     return { left: readSide(left, right, snapshot, tree.left), right: readSide(right, left, snapshot, tree.right) };
 };
 
-export const readInspectResult = (page, snapshot) => {
+export const readInspectResult = (page, _snapshot) => {
     const result = { box: page.detail.box, classes: readClasses(page.detail.classes), error: page.detail.error || page.snapshot.error, html: page.detail.html, label: page.detail.label, path: page.detail.path };
-    if (snapshot) result.snapshot = readSnapshot(page);
+    if (readSnapshotFlag()) result.snapshot = readSnapshot(page);
     return result;
 };

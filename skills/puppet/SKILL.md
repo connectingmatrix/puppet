@@ -44,7 +44,8 @@ Preferred CLI workflows:
 
 Token budget rules:
 - Prefer `page.evaluate()` for targeted facts and return a small object.
-- Do not return full `page.data(..., { snapshot: true })`, full HTML, base64 screenshots, or broad compare payloads into Codex unless the user explicitly needs them.
+- Snapshot output is hard disabled in Puppet. Do not pass `snapshot:true`; it is ignored.
+- Do not return full HTML, base64 screenshots, or broad compare payloads into Codex unless the user explicitly needs them.
 - REST and CLI responses compact large output into `{ compact:true, summary, artifact }`; read `artifact.path` from disk instead of pasting the full payload into chat.
 - Add `"raw": true` only when code needs the full JSON object.
 - For `giga-ai-ui` workflow checks, prefer `examples/giga-workflow-actions.mjs` or its short markdown guide.
@@ -67,11 +68,11 @@ SDK capabilities:
 - Diff: `page.compare(otherPage)` and `page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`.
 
 Output rules:
-- `classes`, `snapshot.classes`, `snapshot.style`, `diff.classes_diff`, `diff.styles_diff`, tree `styles`, and tree diff `styles` are key-value objects.
+- `classes`, `diff.classes_diff`, `diff.styles_diff`, tree `styles`, and tree diff `styles` are key-value objects.
 - `diff.classes_diff[className]` is `applied` or `missing class`.
 - `diff.styles_diff[propertyName]` is that side's changed computed value.
 - `runs` is keyed by viewport like `runs["1024x700"]`.
-- `snapshot` is omitted unless `"snapshot": true` is passed.
+- `snapshot` is always omitted because snapshot output is hard disabled.
 - large REST/CLI payloads are stored in `~/.puppet/artifacts` and summarized by default.
 
 Troubleshooting:

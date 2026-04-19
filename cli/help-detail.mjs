@@ -15,10 +15,10 @@ Server and instance APIs:
 Live page APIs:
   GET  /api/pages/active      Returns { ok, items } for live pages. Use --session-id with CLI.
   GET  /api/pages/browser     Returns all visible browser tabs as bindable pages.
-  POST /api/pages/open        Body { pages, sessionId?, snapshot?, actions? }. Returns { sessionId, pages }.
+  POST /api/pages/open        Body { pages, sessionId?, actions? }. Returns { sessionId, pages }.
   POST /api/pages/actions     Body { actions }. Returns { results }.
-  POST /api/pages/data        Body { pageId, selector, path?, snapshot?, raw? }. Compact by default when large.
-  POST /api/pages/diff        Body { leftPageId, rightPageId, selector, path?, snapshot?, raw? }. Compact by default when large.
+  POST /api/pages/data        Body { pageId, selector, path?, raw? }. Compact by default when large.
+  POST /api/pages/diff        Body { leftPageId, rightPageId, selector, path?, raw? }. Compact by default when large.
   POST /api/pages/html        Body { pageId, selector?, frameId?, index?, raw? }. Compact by default when large.
   POST /api/pages/frames      Body { pageId }. Returns frame metadata.
   POST /api/pages/screenshot Body { pageId, selector?, current?, raw? }. Compact by default when large.
@@ -27,9 +27,9 @@ Live page APIs:
 
 Legacy one-shot APIs:
   POST /api/compare/routes    Body { oldBase, currentBase, routes, selectors?, artifactPath?, waitUntil?, settleMs? }. Returns compact summary and artifactPath.
-  POST /api/compare/pages     Body { leftUrl, rightUrl, selector?, path?, sizes?, snapshot?, actions? }.
-  POST /api/compare/selector  Body { leftUrl, rightUrl, selector, sizes?, snapshot?, actions? }.
-  POST /api/inspect/selector  Body { url, selector, path?, snapshot?, actions? }.
+  POST /api/compare/pages     Body { leftUrl, rightUrl, selector?, path?, sizes?, actions? }.
+  POST /api/compare/selector  Body { leftUrl, rightUrl, selector, sizes?, actions? }.
+  POST /api/inspect/selector  Body { url, selector, path?, actions? }.
 
 CLI API equivalents:
   puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
@@ -69,7 +69,7 @@ SDK page helpers and returns:
   page.keyboard.press(key) -> { key }.
   page.evaluate(fnOrScript, ...args) -> serializable page-context result.
   page.html(selector?) -> { ok, pageId, html, selector, url }.
-  page.data(selector, { snapshot, compact }) -> selector detail and optional snapshot.
+  page.data(selector, { compact }) -> selector detail. Snapshot output is hard disabled.
   page.screenshot({ path?, selector?, current? }) -> writes path when supplied and omits base64 from the returned object unless raw:true is passed.
   page.compare(page2, options?) and page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
   page.frames(), page.iframes() -> frame metadata array. page.frame(frameId), page.iframe[frameId] -> frame-scoped Page.
@@ -95,9 +95,9 @@ Output rules:
   Use puppet compare routes for broad old-vs-current UI route checks. It returns per-route body/count/style summary keys and writes full details to artifactPath.
   Large REST/CLI payloads return { compact:true, summary, artifact }. Read artifact.path only when a full payload is truly needed.
   SDK helpers request raw data internally so scripts can inspect data; /api/pages/run compacts the final returned value by default.
-  Prefer page.evaluate() for targeted facts. Avoid snapshot:true, full HTML, screenshots, and all-size compare unless necessary.
-  classes, snapshot.classes, snapshot.style, diff.classes_diff, diff.styles_diff, tree styles, and tree diff styles are key-value objects.
-  snapshot is omitted unless snapshot:true is requested.
+  Prefer page.evaluate() for targeted facts. Avoid full HTML, screenshots, and all-size compare unless necessary.
+  classes, diff.classes_diff, diff.styles_diff, tree styles, and tree diff styles are key-value objects.
+  snapshot is always omitted because snapshot output is hard disabled.
   runs are keyed by viewport, for example runs["1024x700"].`;
 
 export const helpDetailCommand = () => {
