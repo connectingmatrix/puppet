@@ -4,13 +4,15 @@ Puppet is a Chrome extension plus local server for trusted browser control, live
 
 ## Quick Start
 
-1. `npm install -g /Users/abeer/dev/chrome_extension_utils`
-2. `puppet server start --port 4017`
-3. Load `/Users/abeer/dev/chrome_extension_utils/dist` as an unpacked Chrome extension once
-4. Keep Chrome running; the extension background worker connects to the default `4017` server without opening an extension tab
-5. Check `puppet instances --port 4017` for a connected item
-6. For another Chrome instance, start a custom server with `puppet server start --port 4021`
-7. Bind that custom port with `puppet extension open chrome-extension://YOUR_EXTENSION_ID/sidepanel.html --port 4021`
+1. Local install: `npm install -g /Users/abeer/dev/chrome_extension_utils`
+2. GitHub install on another machine: `npm install -g git+ssh://git@github.com/connectingmatrix/puppet.git`
+3. `puppet server start --port 4017`
+4. Load `/Users/abeer/dev/chrome_extension_utils/dist` as an unpacked Chrome extension once
+5. Keep Chrome running; the extension background worker connects to the default `4017` server without opening an extension tab
+6. Check `puppet instances --port 4017` for a connected item
+7. Configure the extension URL once with `puppet configure chrome-extension://YOUR_EXTENSION_ID/sidepanel.html`
+8. For another Chrome instance, start a custom server with `puppet server start --port 4021`
+9. Bind custom ports with `puppet extension open --port 4021`
 
 The `puppet` binary is the preferred automation interface. It can start the server, call every REST endpoint, run server-side SDK scripts, and open custom-port extension pages.
 
@@ -21,6 +23,9 @@ puppet help
 puppet help pages
 puppet help detail
 puppet help md
+puppet configure chrome-extension://YOUR_EXTENSION_ID/sidepanel.html
+puppet configure show
+puppet extension open --port 4021
 puppet server start --port 4017
 puppet server status --port 4017
 puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'

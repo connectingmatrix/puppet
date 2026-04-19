@@ -5,8 +5,9 @@ const main = `Puppet CLI
 
 Usage:
   puppet server start [--port 4017]
-  puppet server foreground [--port 4017]
-  puppet server status [--port 4017]
+  puppet configure chrome-extension://EXTENSION_ID/sidepanel.html
+  puppet configure show
+  puppet server foreground [--port 4017]; puppet server status [--port 4017]
   puppet instances [--port 4017]
   puppet pages open --json '{"pages":[{"url":"https://example.com"}]}'
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"...","selector":"button"}]}'
@@ -21,10 +22,10 @@ Global options:
   --port <port>       Target local server port. Default: 4017
   --server <url>      Target full server URL.
   --json <json>       Request JSON body.
-  --file <path>       Read request JSON from a file.
-  --stdin             Read request JSON from stdin.
+  --file <path>       Read request JSON from a file. --stdin reads request JSON from stdin.
 
 Help:
+  puppet configure    Stores the extension URL in ~/.puppet/config.json.
   puppet help detail  Lists all APIs, CLI usage, helper functions, and return shapes.
   puppet help md      Prints the current README.md integration guide.
   puppet help COMMAND Prints focused examples for pages, run, compare, or server.`;
@@ -38,8 +39,7 @@ Commands:
   puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"...","deltaY":800}]}'
   puppet pages data --json '{"pageId":"...","selector":"body","snapshot":true}'
   puppet pages diff --json '{"leftPageId":"...","rightPageId":"...","selector":"body"}'
-  puppet pages html --json '{"pageId":"...","selector":"main"}'
-  puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.png"}'
+  puppet pages html --json '{"pageId":"...","selector":"main"}'; puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.png"}'
   puppet pages close --json '{"pageId":"..."}'
 
 Action array example:
@@ -80,10 +80,11 @@ Output uses key-value objects for classes, computed styles, style diffs, class d
 const server = `Puppet server
 
 Commands:
+  puppet configure chrome-extension://EXTENSION_ID/sidepanel.html
+  puppet configure --extension-url chrome-extension://EXTENSION_ID/sidepanel.html; puppet configure show; puppet configure reset
   puppet server start --port 4017
-  puppet server foreground --port 4017
-  puppet server status --port 4017
-  puppet extension open chrome-extension://EXTENSION_ID/sidepanel.html --port 4021
+  puppet server foreground --port 4017; puppet server status --port 4017
+  puppet extension open --port 4021
 
 Default port 4017 is handled by the extension background worker. Custom ports require a URL-bound extension page.`;
 

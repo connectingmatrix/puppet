@@ -1,8 +1,13 @@
 {
   "name": "puppet",
   "version": "0.1.0",
+  "description": "Chrome extension backed browser automation, inspection, screenshots, and DOM/style diffs.",
   "private": false,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/connectingmatrix/puppet.git"
+  },
   "bin": {
     "puppet": "./bin/puppet.mjs"
   },

@@ -1,16 +1,15 @@
 const detail = `Puppet Detailed API Reference
 
 Discovery:
-  puppet help                 Short command menu. puppet help detail gives this API/helper reference.
-  puppet help md              Print the full README.md integration guide.
-  puppet api GET /            Read README.md from a running server.
+  puppet help is the short menu. puppet help detail gives this reference. puppet help md or puppet api GET / prints README.md.
 
 Server and instance APIs:
   GET  /api/health            Returns { ok }.
   GET  /api/instances         Returns connected extension instances with browserId, events, extensionUrl, pageUrl, socketId, status.
   puppet server start         Starts or reuses the listener and prints health plus instances.
   puppet server status        Prints health plus instances without starting a new process.
-  puppet instances            CLI wrapper for GET /api/instances. puppet extension open URL binds custom ports.
+  puppet instances            CLI wrapper for GET /api/instances. puppet extension open binds configured URL to custom ports.
+  puppet configure URL        Stores the extension sidepanel URL in ~/.puppet/config.json.
   WS   /api/live and /api/socket are client and extension socket control channels.
 
 Live page APIs:
@@ -43,6 +42,8 @@ CLI API equivalents:
   puppet pages close --json '{"pageId":"PAGE"}'
   puppet run ./script.mjs --timeout-ms 180000
   puppet exec --eval "const state = await server.start({port:4017}); return state.status"
+  puppet configure chrome-extension://EXTENSION_ID/sidepanel.html
+  puppet extension open --port 4021
   puppet api METHOD /api/path --json '{}'
 
 Action types:
@@ -54,8 +55,7 @@ Action types:
 SDK browser helpers and returns:
   server.start({ port }) -> { browser, status, port, baseUrl, extensionUrl, instanceId }.
   browser.newPage(url?, options?) -> Page. Reuses a controlled page unless newTab or reuse:false is passed.
-  browser.pages() -> Page[] for currently visible browser tabs.
-  browser.sessionPages() -> Page[] for the current session.
+  browser.pages() -> Page[] for visible tabs. browser.sessionPages() -> Page[] for the current session.
   browser.close() -> closes session pages and clears live socket state.
 
 SDK page helpers and returns:
@@ -69,8 +69,7 @@ SDK page helpers and returns:
   page.html(selector?) -> { ok, pageId, html, selector, url }.
   page.data(selector, { snapshot }) -> selector detail and optional snapshot.
   page.screenshot({ path?, selector?, current? }) -> { ok, dataBase64, mimeType, pageId } and writes path when supplied.
-  page.compare(page2, options?) -> compare result.
-  page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
+  page.compare(page2, options?) and page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
   page.frames(), page.iframes() -> frame metadata array. page.frame(frameId), page.iframe[frameId] -> frame-scoped Page.
   page.request(options) -> HTTP response data from current session context.
   page.graphql(query, options) -> GraphQL response data.

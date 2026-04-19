@@ -7,6 +7,9 @@ description: Use when you need live page sessions, trusted browser control, scre
 
 Use the globally installed `puppet` command. Do not call repo-local `npm run server`, curl raw endpoints, or repo-local shell launchers unless the CLI is missing.
 
+Install on another machine:
+- `npm install -g git+ssh://git@github.com/connectingmatrix/puppet.git`
+
 Start and inspect state:
 - `puppet server start --port 4017`
 - `puppet server status --port 4017`
@@ -16,11 +19,14 @@ Start and inspect state:
 - `puppet help md`
 - `puppet help pages`
 - `puppet help run`
+- `puppet configure show`
+- `puppet extension open --port PORT`
 
 Default port behavior:
 - Port `4017` is owned by the extension background worker and should not require an extension tab.
 - If `puppet instances` is empty but `puppet server status` is healthy, wait for the extension background worker or reload the installed extension once.
-- For a custom Chrome profile/port, run `puppet server start --port PORT`, then `puppet extension open chrome-extension://EXTENSION_ID/sidepanel.html --port PORT`.
+- Configure once with `puppet configure chrome-extension://EXTENSION_ID/sidepanel.html`.
+- For a custom Chrome profile/port, run `puppet server start --port PORT`, then `puppet extension open --port PORT`.
 
 Preferred CLI workflows:
 - Open pages: `puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'`
@@ -30,6 +36,7 @@ Preferred CLI workflows:
 - Compare pages: `puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'`
 - Run scripts: `puppet run ./script.mjs --timeout-ms 180000`
 - Execute inline scripts: `puppet exec --eval "const state = await server.start({port:4017}); return state.status"`
+- Configure extension URL: `puppet configure chrome-extension://EXTENSION_ID/sidepanel.html`
 - Print API/helper reference: `puppet help detail`
 - Print full integration docs: `puppet help md`
 
