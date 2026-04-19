@@ -31,6 +31,7 @@ puppet server status --port 4017
 puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
 puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"PAGE","deltaY":800}]}'
 puppet pages data --json '{"pageId":"PAGE","selector":"body"}'
+puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'
 puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'
 puppet run ./inspect.mjs --timeout-ms 180000
 puppet api GET /api/health
@@ -57,6 +58,41 @@ return await page.evaluate(() => ({
 ```
 
 Avoid returning `snapshot:true`, full `body` HTML, base64 screenshots, or all-size compare output directly into Codex. If you need the full payload for offline inspection, pass `"raw": true` or read `artifact.path` outside the chat context.
+
+## Compact Route Compare
+
+Use this when you need the same broad old-vs-current UI check that Codex often writes as a Playwright script. It visits each route on both bases in one reused Puppet tab, samples body text, headings, element counts, and selected computed styles, writes the full artifact to `.tmp`, and returns only route-level summary keys.
+
+```sh
+puppet compare routes --json '{
+  "oldBase":"http://127.0.0.1:64925",
+  "currentBase":"http://127.0.0.1:5001",
+  "routes":["/dashboard","/bots","/settings"],
+  "artifactPath":".tmp/ui-route-compare-64925-vs-5001.json",
+  "waitUntil":"domcontentloaded",
+  "settleMs":2200
+}'
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "artifactPath": "/absolute/path/.tmp/ui-route-compare-64925-vs-5001.json",
+  "routesChecked": 3,
+  "summary": [
+    { "route": "/dashboard", "bodyDelta": 0, "countDiffKeys": [], "styleDiffKeys": ["card"], "errors": { "old": null, "current": null } }
+  ]
+}
+```
+
+Optional request keys:
+- `selectors`: replace the sampled selector map, for example `{ "header":"header", "card":"[class*=\"card\" i]" }`
+- `styleKeys`: replace sampled computed style properties
+- `width` and `height`: viewport used for the reused tab
+- `timeoutMs`: total compare timeout
+- `raw`: still works, but prefer the artifact file for full details
 
 ## SDK First
 
@@ -167,6 +203,7 @@ Live routes:
 - `POST /api/pages/close`
 
 Legacy routes:
+- `POST /api/compare/routes`
 - `POST /api/compare/pages`
 - `POST /api/compare/selector`
 - `POST /api/inspect/selector`
@@ -389,6 +426,7 @@ Response keys:
 
 Runnable examples:
 - `puppet run /Users/abeer/dev/chrome_extension_utils/examples/puppet-run.mjs --timeout-ms 180000`
+- `puppet compare routes --file /Users/abeer/dev/chrome_extension_utils/examples/route-compare.json`
 - `node /Users/abeer/dev/chrome_extension_utils/examples/google-suite.mjs`
 - `node /Users/abeer/dev/chrome_extension_utils/examples/sample-suite.mjs`
 - `node /Users/abeer/dev/chrome_extension_utils/examples/giga-workflow-actions.mjs open-designer`
@@ -397,6 +435,7 @@ Runnable examples:
 - `/Users/abeer/dev/chrome_extension_utils/examples/google-suite.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/sample-suite.mjs`
 - `/Users/abeer/dev/chrome_extension_utils/examples/boilerplate/run.mjs`
+- `/Users/abeer/dev/chrome_extension_utils/examples/route-compare.json`
 
 ## Google Suite
 

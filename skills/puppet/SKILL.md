@@ -34,6 +34,8 @@ Preferred CLI workflows:
 - Run actions: `puppet pages actions --json '{"actions":[{"type":"click","pageId":"PAGE","selector":"button"}]}'`
 - Capture data: `puppet pages data --json '{"pageId":"PAGE","selector":"body"}'`
 - Compare pages: `puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'`
+- Compare many routes compactly: `puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'`
+- Use the route compare example: `puppet compare routes --file /Users/abeer/dev/chrome_extension_utils/examples/route-compare.json`
 - Run scripts: `puppet run ./script.mjs --timeout-ms 180000`
 - Execute inline scripts: `puppet exec --eval "const state = await server.start({port:4017}); return state.status"`
 - Configure extension URL: `puppet configure chrome-extension://EXTENSION_ID/sidepanel.html`
@@ -46,6 +48,7 @@ Token budget rules:
 - REST and CLI responses compact large output into `{ compact:true, summary, artifact }`; read `artifact.path` from disk instead of pasting the full payload into chat.
 - Add `"raw": true` only when code needs the full JSON object.
 - For `giga-ai-ui` workflow checks, prefer `examples/giga-workflow-actions.mjs` or its short markdown guide.
+- For broad route regressions, use `puppet compare routes`. It reuses one tab, returns a small summary, and writes the full route artifact to `.tmp`.
 
 Script scope for `puppet run` and `puppet exec`:
 - Script files are server-side function bodies, not standalone Node modules.

@@ -1,0 +1,31 @@
+{
+  "oldBase": "http://127.0.0.1:64925",
+  "currentBase": "http://127.0.0.1:5001",
+  "artifactPath": ".tmp/ui-route-compare-64925-vs-5001.json",
+  "waitUntil": "domcontentloaded",
+  "settleMs": 2200,
+  "timeoutMs": 240000,
+  "routes": [
+    "/dashboard",
+    "/bots",
+    "/bots/create",
+    "/bots/config/overview",
+    "/bots/config/strategy",
+    "/bots/config/execution",
+    "/bots/config/settings",
+    "/bots/config/backtesting",
+    "/bots/workspace",
+    "/wallets",
+    "/trade-history",
+    "/patterns",
+    "/live-logs",
+    "/debug",
+    "/charts",
+    "/charts/detail",
+    "/charts/analysis",
+    "/charts/symbol-analysis",
+    "/settings",
+    "/bot-window",
+    "/tray-popup"
+  ]
+}

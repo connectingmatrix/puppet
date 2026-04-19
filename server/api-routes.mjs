@@ -1,6 +1,7 @@
 import express from 'express';
 import { readCompactResult } from './compact-result.mjs';
 import { listPages, readLivePage } from './live-store.mjs';
+import { runRouteCompare } from './route-compare.mjs';
 import { runScript } from './script-runner.mjs';
 import { createJob, listInstances } from './store.mjs';
 
@@ -37,6 +38,14 @@ router.get('/pages/browser', async (request, response) => {
     try {
         const result = await createJob('pages-browser', { sessionId: request.query.sessionId || '' }, `${request.query.instanceId || ''}`, 45000);
         await send(request, response, 'pages-browser', { ok: true, ...result.result });
+    } catch (error) {
+        response.status(409).json({ error: error.message, ok: false });
+    }
+});
+router.post('/compare/routes', async (request, response) => {
+    try {
+        const result = await runRouteCompare(readBaseUrl(request), request.body || {});
+        await send(request, response, 'compare-routes', { ok: true, ...result });
     } catch (error) {
         response.status(409).json({ error: error.message, ok: false });
     }

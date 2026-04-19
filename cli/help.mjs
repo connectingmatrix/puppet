@@ -11,6 +11,7 @@ Usage:
   puppet instances [--port 4017]
   puppet pages open --json '{"pages":[{"url":"https://example.com"}]}'
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"...","selector":"button"}]}'
+  puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard"]}'
   puppet run ./script.mjs [--port 4017] [--timeout-ms 120000]
   puppet exec --eval "const state = await server.start(); return state.status"
   puppet api GET /api/health
@@ -72,10 +73,12 @@ Sample script:
 const compare = `Puppet compare and inspect
 
 Commands:
+  puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'
   puppet compare pages --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'
   puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":".app"}'
   puppet inspect selector --json '{"url":"https://example.com","selector":"body"}'
 
+Route compare writes the full per-route artifact to .tmp and returns only summary keys by default.
 Default output is compact when a payload is large. Add "raw":true only when code needs the full JSON.`;
 
 const server = `Puppet server

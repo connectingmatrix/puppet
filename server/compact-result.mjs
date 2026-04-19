@@ -29,6 +29,7 @@ const trimInstances = (value = {}) => {
 export const readCompactResult = async (kind, value, request) => {
     if (readRaw(request)) return value;
     if (kind === 'instances') return trimInstances(value);
+    if (kind === 'compare-routes') return value;
     const bytes = readJsonBytes(value);
     if (bytes <= limit) return value;
     const artifact = await writeArtifact(kind, value);

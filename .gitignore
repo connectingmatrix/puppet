@@ -3,5 +3,6 @@ dist
 .DS_Store
 artifacts/*.pem
 .puppet.local.json
+.tmp/
 .ai/
 .continue/

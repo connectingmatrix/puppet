@@ -26,6 +26,7 @@ Live page APIs:
   POST /api/pages/run         Body { script, sessionId?, pages?, args?, timeoutMs?, closeOnExit?, raw? }. Compact by default when large.
 
 Legacy one-shot APIs:
+  POST /api/compare/routes    Body { oldBase, currentBase, routes, selectors?, artifactPath?, waitUntil?, settleMs? }. Returns compact summary and artifactPath.
   POST /api/compare/pages     Body { leftUrl, rightUrl, selector?, path?, sizes?, snapshot?, actions? }.
   POST /api/compare/selector  Body { leftUrl, rightUrl, selector, sizes?, snapshot?, actions? }.
   POST /api/inspect/selector  Body { url, selector, path?, snapshot?, actions? }.
@@ -40,6 +41,7 @@ CLI API equivalents:
   puppet pages html --json '{"pageId":"PAGE","selector":"main"}'
   puppet pages frames --json '{"pageId":"PAGE"}'; puppet pages screenshot --json '{"pageId":"PAGE","current":true}'
   puppet pages close --json '{"pageId":"PAGE"}'
+  puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'
   puppet run ./script.mjs --timeout-ms 180000
   puppet exec --eval "const state = await server.start({port:4017}); return state.status"
   puppet configure chrome-extension://EXTENSION_ID/sidepanel.html
@@ -90,6 +92,7 @@ Network helpers:
   page.waitForRequest(match), page.waitForResponse(match), page.waitForGraphql(match) -> matching network event.
 
 Output rules:
+  Use puppet compare routes for broad old-vs-current UI route checks. It returns per-route body/count/style summary keys and writes full details to artifactPath.
   Large REST/CLI payloads return { compact:true, summary, artifact }. Read artifact.path only when a full payload is truly needed.
   SDK helpers request raw data internally so scripts can inspect data; /api/pages/run compacts the final returned value by default.
   Prefer page.evaluate() for targeted facts. Avoid snapshot:true, full HTML, screenshots, and all-size compare unless necessary.
