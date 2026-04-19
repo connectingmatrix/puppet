@@ -8,6 +8,10 @@ const readActive = (settings: RemoteSettings) => {
     const serverUrl = readRemoteUrlOverride();
     return serverUrl ? { ...settings, serverUrl } : settings;
 };
+const readUrlBoundSettings = (settings: RemoteSettings) => {
+    const serverUrl = readRemoteUrlOverride();
+    return serverUrl && serverUrl !== settings.serverUrl ? { ...settings, remoteEnabled: true, serverUrl } : settings;
+};
 
 export const useRemoteSettings = () => {
     const [message, setMessage] = useState('');
@@ -18,9 +22,11 @@ export const useRemoteSettings = () => {
     const [activeSettings, setActiveSettings] = useState<RemoteSettings>(emptySettings);
 
     useEffect(() => {
-        readRemoteSettings().then((next) => {
-            setSettings(next);
-            setActiveSettings(readActive(next));
+        readRemoteSettings().then(async (next) => {
+            const active = readUrlBoundSettings(next);
+            const saved = active === next ? next : await saveRemoteSettings(active);
+            setSettings(saved);
+            setActiveSettings(readActive(saved));
             setMessage('');
             setMessageTone('base');
         }).catch((error) => {

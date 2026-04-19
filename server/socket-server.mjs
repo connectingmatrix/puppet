@@ -39,8 +39,9 @@ export const attachSocketServer = (server) => {
             const message = readMessage(value);
             if (!message || !message.type) return;
             if (message.type === 'instance.register') {
-                instanceId = message.instanceId || '';
-                send(socket, { type: 'instance.registered', instance: registerInstance(instanceId, socket, message.payload || {}) });
+                const instance = registerInstance(message.instanceId || '', socket, message.payload || {});
+                instanceId = instance.id || message.instanceId || '';
+                send(socket, { type: 'instance.registered', instance });
             }
             if (message.type === 'instance.heartbeat' && instanceId) heartbeatInstance(instanceId);
             if (message.type === 'job.progress') touchJob(message.jobId || '', message.progress || '');

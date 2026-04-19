@@ -46,7 +46,7 @@ export class Browser {
             }
         }
         const data = await requestJson(this.baseUrl, '/api/pages/open', 'POST', {
-            pages: [{ height: options.height, role: options.role || `page-${Date.now()}`, url, waitUntil: options.waitUntil || 'document', width: options.width }],
+            pages: [{ height: options.height, role: options.role || `page-${Date.now()}`, url, waitUntil: options.waitUntil || 'load', width: options.width }],
             raw: true,
             sessionId: this.sessionId || '',
             snapshot: false

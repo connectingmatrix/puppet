@@ -2,9 +2,9 @@ import { readBrowserId } from '@/src/background/browser-id-work';
 import { runRemoteJob } from '@/src/background/job-runner';
 import { setLiveEmitter } from '@/src/background/live-event-work';
 import { runRequestResolve } from '@/src/background/request-resolve-work';
-import { addRemoteWorkerEvent, markRemoteWorkerStatus, readRemoteWorkerStatus } from '@/src/background/remote-worker-state';
+import { addRemoteWorkerEvent, markRemoteWorkerServer, markRemoteWorkerStatus, readRemoteWorkerStatus } from '@/src/background/remote-worker-state';
 import { readRuntimeApi } from '@/src/shared/extension-api';
-import { readRemoteSettings } from '@/src/shared/remote-store';
+import { readRemoteSettings, remoteSettingsKey } from '@/src/shared/remote-store';
 import { remoteServerUrl, RemoteMessage } from '@/src/shared/remote-types';
 import { runWithLimit } from '@/src/shared/time-limit';
 
@@ -13,6 +13,7 @@ let heartbeat = 0;
 let retry = 0;
 let socket: WebSocket | null = null;
 let instanceId = '';
+let serverUrl = remoteServerUrl;
 let socketToken = 0;
 const jobs: RemoteMessage[] = [];
 const readText = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
@@ -26,6 +27,10 @@ const send = (message: RemoteMessage) => {
     socket.send(JSON.stringify(message));
 };
 const emit = (name: string, data: Record<string, unknown>, sessionId = '') => send({ data, name, sessionId, type: 'live.event' });
+const resetQueue = () => {
+    jobs.length = 0;
+    busy = false;
+};
 const retryConnect = () => {
     markRemoteWorkerStatus('connecting', 'Retrying background socket.', 'warn');
     clearTimeout(retry);
@@ -42,18 +47,21 @@ const runNext = async () => {
     if (busy) return;
     const message = jobs.shift();
     if (!message) return;
+    const token = socketToken;
     busy = true;
     const progress = setInterval(() => send({ jobId: message.jobId, progress: `Working on ${message.kind || 'inspect-selector'}.`, type: 'job.progress' }), 5000);
     try {
         send({ jobId: message.jobId, progress: `Started ${message.kind || 'inspect-selector'}.`, type: 'job.progress' });
         const result = await runWithLimit(runRemoteJob({ id: message.jobId || '', kind: message.kind || 'inspect-selector', payload: message.payload || {}, timeoutMs: message.timeoutMs }, instanceId, emit), Number(message.timeoutMs) || 45000, `${message.kind || 'remote'} job`);
-        send({ jobId: message.jobId, result, type: 'job.result' });
+        if (token === socketToken) send({ jobId: message.jobId, result, type: 'job.result' });
     } catch (error) {
-        send({ error: readText(error, 'Remote job failed.'), jobId: message.jobId, type: 'job.error' });
+        if (token === socketToken) send({ error: readText(error, 'Remote job failed.'), jobId: message.jobId, type: 'job.error' });
     } finally {
         clearInterval(progress);
-        busy = false;
-        void runNext();
+        if (token === socketToken) {
+            busy = false;
+            void runNext();
+        }
     }
 };
 const connect = async () => {
@@ -63,16 +71,20 @@ const connect = async () => {
             markRemoteWorkerStatus('disconnected', 'Remote control is disabled.', 'danger');
             return;
         }
+        const nextServerUrl = settings.serverUrl || remoteServerUrl;
+        markRemoteWorkerServer(nextServerUrl);
         const browserId = await readBrowserId();
         instanceId = browserId;
-        if (socket && socket.readyState === WebSocket.OPEN) return;
-        if (socket && socket.readyState === WebSocket.CONNECTING) return;
+        if (socket && socket.readyState === WebSocket.OPEN && serverUrl === nextServerUrl) return;
+        if (socket && socket.readyState === WebSocket.CONNECTING && serverUrl === nextServerUrl) return;
+        serverUrl = nextServerUrl;
         if (socket) socket.close();
+        resetQueue();
         const runtime = readRuntimeApi();
         markRemoteWorkerStatus('connecting', 'Connecting background socket.', 'warn');
         const token = socketToken + 1;
         socketToken = token;
-        socket = new WebSocket(readSocketUrl(remoteServerUrl));
+        socket = new WebSocket(readSocketUrl(serverUrl));
         socket.onopen = () => {
             if (token !== socketToken) return;
             clearInterval(heartbeat);
@@ -88,12 +100,14 @@ const connect = async () => {
             if (message.type === 'request.resolve') void runResolve(message);
             if (message.type === 'job.dispatch') {
                 jobs.push(message);
+                addRemoteWorkerEvent(`Job ${message.kind || 'inspect-selector'} queued.`, 'warn');
                 void runNext();
             }
         };
         socket.onclose = () => {
             if (token !== socketToken) return;
             clearInterval(heartbeat);
+            resetQueue();
             markRemoteWorkerStatus('disconnected', 'Background socket disconnected.', 'danger');
             retryConnect();
         };
@@ -113,6 +127,7 @@ export const restartRemoteSocketWorker = () => {
     clearInterval(heartbeat);
     clearTimeout(retry);
     socketToken += 1;
+    resetQueue();
     if (socket) socket.close();
     socket = null;
     void connect();
@@ -123,4 +138,7 @@ export const startRemoteSocketWorker = () => {
     void connect();
     chrome.alarms.create('puppet-socket', { periodInMinutes: 1 });
     chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === 'puppet-socket') void connect(); });
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes[remoteSettingsKey]) restartRemoteSocketWorker();
+    });
 };

@@ -23,12 +23,13 @@ Start and inspect state:
 Default port behavior:
 - Port `4017` is owned by the extension background worker and should not require an extension tab.
 - If `puppet instances` is empty but `puppet server status` is healthy, wait for the extension background worker or reload the installed extension once.
-- The sidepanel lamp mirrors the background worker when it targets the same server origin; custom ports use a sidepanel socket.
+- The sidepanel lamp mirrors the singleton background worker; sidepanels do not register separate socket instances.
+- Custom ports are handled by saving the server URL in extension settings, then the background worker reconnects as the same browser instance.
 - Configure once with `puppet configure chrome-extension://EXTENSION_ID/sidepanel.html`.
 - For a custom Chrome profile/port, run `puppet server start --port PORT`, then `puppet extension open --port PORT`.
 
 Preferred CLI workflows:
-- Open pages: `puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"document"}]}'`
+- Open pages: `puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'`
 - List live pages: `puppet pages active`
 - Run actions: `puppet pages actions --json '{"actions":[{"type":"click","pageId":"PAGE","selector":"button"}]}'`
 - Capture data: `puppet pages data --json '{"pageId":"PAGE","selector":"body"}'`
@@ -52,8 +53,6 @@ Script scope for `puppet run` and `puppet exec`:
 - Throw when `browser` is null: `if (!state.browser) throw new Error('Puppet not ready: ' + state.status)`.
 - `browser.pages()` lists all currently open browser tabs the extension can bind.
 - `browser.newPage(url, options)` reuses a controlled tab by default; pass `{ newTab: true }` only for intentional extra tabs.
-- Default navigation waits for `document`, meaning the page is scriptable. Use explicit `waitForSelector(...)` for app readiness and strict `load` only when every resource must finish.
-- If strict `load` or network idle times out, read the error message; it includes pending request URLs for Vite/module hangs.
 - Use `await browser.close()` to close session pages opened by that browser.
 
 SDK capabilities:
@@ -76,4 +75,4 @@ Troubleshooting:
 - `server_ready_no_instance` means the server is healthy but no extension instance is registered.
 - If the background worker is stuck, open the sidepanel lamp popup and click `Restart background worker`.
 - `Timed out waiting for script run` means the CLI/server returned correctly; split or raise `--timeout-ms` if the browser work is expected to be long.
-- For custom ports, keep the URL-bound extension page open for that port.
+- For custom ports, `puppet extension open --port PORT` saves the custom server URL; after the background worker reconnects, the extension page is not a separate control instance.

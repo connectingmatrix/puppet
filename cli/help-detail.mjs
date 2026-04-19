@@ -31,7 +31,7 @@ Legacy one-shot APIs:
   POST /api/inspect/selector  Body { url, selector, path?, snapshot?, actions? }.
 
 CLI API equivalents:
-  puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"document"}]}'
+  puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
   puppet pages active --session-id SESSION
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"PAGE","selector":"button"}]}'
@@ -55,7 +55,6 @@ Action types:
 SDK browser helpers and returns:
   server.start({ port }) -> { browser, status, port, baseUrl, extensionUrl, instanceId }.
   browser.newPage(url?, options?) -> Page. Reuses a controlled page unless newTab or reuse:false is passed.
-  Default waitUntil is document. Use waitForSelector for app readiness; strict load/networkidle reports pending request URLs on timeout.
   browser.pages() -> Page[] for visible tabs. browser.sessionPages() -> Page[] for the current session.
   browser.close() -> closes session pages and clears live socket state.
 

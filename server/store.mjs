@@ -10,6 +10,7 @@ const readEvents = (entry) => {
     return items;
 };
 const readItem = (id, entry) => ({ browserId: entry.browserId || '', connectedAt: entry.connectedAt, events: readEvents(entry), extensionId: entry.extensionId, extensionUrl: entry.extensionUrl, id, lastSeen: entry.lastSeen, pageUrl: entry.pageUrl, socketId: entry.socketId, status: 'connected' });
+const readCanonicalId = (instanceId = '', payload = {}) => payload.browserId || instanceId || crypto.randomUUID();
 const pushEvent = (entry, text, tone = 'base') => {
     entry.events.unshift({ at: readNow(), text, tone });
     if (entry.events.length > eventLimit) entry.events.length = eventLimit;
@@ -46,13 +47,22 @@ export const listInstances = () => {
 };
 
 export const registerInstance = (instanceId, socket, payload) => {
-    const current = instances.get(instanceId);
+    const targetId = readCanonicalId(instanceId, payload);
+    for (const [id, entry] of instances.entries()) {
+        if (!payload.browserId || entry.browserId !== payload.browserId || !readOpen(entry)) continue;
+        if (entry.pageUrl === 'background' && payload.pageUrl !== 'background') {
+            pushEvent(entry, 'Rejected duplicate non-background socket.', 'warn');
+            socket.close();
+            return readItem(id, entry);
+        }
+        if (id !== targetId || entry.socket !== socket) entry.socket.close();
+    }
+    const current = instances.get(targetId);
     if (current && current.socket !== socket && readOpen(current)) current.socket.close();
-    for (const [id, entry] of instances.entries()) if (payload.browserId && entry.browserId === payload.browserId && id !== instanceId && readOpen(entry)) entry.socket.close();
     const entry = { browserId: payload.browserId || '', connectedAt: readNow(), events: [], extensionId: payload.extensionId || '', extensionUrl: payload.extensionUrl || '', lastSeen: readNow(), pageUrl: payload.pageUrl || '', socket, socketId: crypto.randomUUID() };
     pushEvent(entry, 'Socket connected.');
-    instances.set(instanceId, entry);
-    return readItem(instanceId, entry);
+    instances.set(targetId, entry);
+    return readItem(targetId, entry);
 };
 
 export const heartbeatInstance = (instanceId) => {

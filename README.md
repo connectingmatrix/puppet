@@ -28,7 +28,7 @@ puppet configure show
 puppet extension open --port 4021
 puppet server start --port 4017
 puppet server status --port 4017
-puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"document"}]}'
+puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"load"}]}'
 puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"PAGE","deltaY":800}]}'
 puppet pages data --json '{"pageId":"PAGE","selector":"body"}'
 puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'
@@ -66,7 +66,7 @@ import server from 'puppet';
 const { browser, status } = await server.start({ port: 4017 });
 if (!browser) throw new Error(`Puppet not ready: ${status}. Reload the installed extension or bind the custom-port extension page.`);
 const page = await browser.newPage();
-await page.goto('https://developer.chrome.com/', { waitUntil: 'document' });
+await page.goto('https://developer.chrome.com/', { waitUntil: 'load' });
 await page.setViewport({ width: 1080, height: 1024 });
 await page.keyboard.press('/');
 await page.locator('::-p-aria(Search)').fill('automate beyond recorder');
@@ -106,14 +106,13 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `server.stop()` only clears the local SDK browser binding; it does not stop the shared Puppet listener
 - use `server.stop({ force: true })` only when you intentionally want to kill a listener started by this SDK process
 - default-port automation does not require an extension page; the background worker registers itself with the server
-- the sidepanel status lamp mirrors the background worker on the same server origin and only opens its own socket for a different custom port
+- the sidepanel status lamp mirrors the singleton background worker; sidepanels do not register separate socket instances
+- custom ports are handled by saving the server URL in extension settings, then the background worker reconnects as the same browser instance
 - use the lamp popup's restart button if the background worker is connected to Chrome but stops responding
-- extension pages opened through `puppet extension open` or the skill launcher are only needed for custom-port binding
+- extension pages opened through `puppet extension open` only save the custom server URL; after the background worker reconnects, the page is not a separate control instance
 - the opener does not create a new extension tab when the target server already has a connected instance
 - `await browser.newPage(url?, options?)` reuses the latest Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
-- default navigation waits for `document`, which means the page is scriptable; use `waitForSelector(...)` for app readiness and strict `load` only when every resource must finish
-- strict `load`, `networkidle0`, and `networkidle2` timeouts include pending request URLs so Vite/module hangs can be debugged without switching tools
 - `await browser.pages()` returns all open browser tabs bound as Puppet pages
 - `await browser.sessionPages()` returns only pages opened in the current Puppet session
 - `await browser.close()`
@@ -197,8 +196,8 @@ Status meanings:
 ```json
 {
   "pages": [
-    { "role": "left", "url": "http://127.0.0.1:4017/examples/compare-left.html", "width": 1440, "height": 900, "waitUntil": "document" },
-    { "role": "right", "url": "http://127.0.0.1:4017/examples/compare-right.html", "width": 1440, "height": 900, "waitUntil": "document" }
+    { "role": "left", "url": "http://127.0.0.1:4017/examples/compare-left.html", "width": 1440, "height": 900, "waitUntil": "load" },
+    { "role": "right", "url": "http://127.0.0.1:4017/examples/compare-right.html", "width": 1440, "height": 900, "waitUntil": "load" }
   ]
 }
 ```
@@ -300,8 +299,8 @@ console.log(accessToken, payload.data, response.status);
 
 ## Action Reference
 
-- `click`: `await page.click('.button', { index: 0, waitUntil: 'document' })`
-  raw: `{ "type": "click", "pageId": "PAGE_ID", "selector": ".button", "index": 0, "waitUntil": "document" }`
+- `click`: `await page.click('.button', { index: 0, waitUntil: 'load' })`
+  raw: `{ "type": "click", "pageId": "PAGE_ID", "selector": ".button", "index": 0, "waitUntil": "load" }`
 - `type_text`: `await page.type("input[name='q']", 'hello', { clearFirst: true })`
   raw: `{ "type": "type_text", "pageId": "PAGE_ID", "selector": "input[name='q']", "value": "hello", "clearFirst": true }`
 - `send_key`: `await page.keyboard.press('Enter')`
@@ -320,8 +319,8 @@ console.log(accessToken, payload.data, response.status);
   raw: `{ "type": "reload_page", "pageId": "PAGE_ID", "waitUntil": "networkidle2" }`
 - `change_screen_size`: `await page.setViewport({ width: 1024, height: 700 })`
   raw: `{ "type": "change_screen_size", "pageId": "PAGE_ID", "width": 1024, "height": 700 }`
-- `navigate_to_url`: `await page.goto('https://example.com', { waitUntil: 'document' })`
-  raw: `{ "type": "navigate_to_url", "pageId": "PAGE_ID", "url": "https://example.com", "waitUntil": "document" }`
+- `navigate_to_url`: `await page.goto('https://example.com', { waitUntil: 'load' })`
+  raw: `{ "type": "navigate_to_url", "pageId": "PAGE_ID", "url": "https://example.com", "waitUntil": "load" }`
 - `get_page_diff`: `await left.compare(right, { selector: '.card', compact: true })`
   raw: `{ "type": "get_page_diff", "leftPageId": "LEFT_ID", "rightPageId": "RIGHT_ID", "selector": ".card" }`
 - `get_page_data`: `await page.data('.card', { compact: true })`
@@ -354,7 +353,7 @@ Supported selector syntax:
 
 ```json
 {
-  "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "document" }],
+  "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "load" }],
   "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.evaluate(() => ({ value: (document.querySelector('#search') || {}).value || '', options: [...document.querySelectorAll('[role=option]')].length }));",
   "closeOnExit": true
 }

@@ -9,7 +9,7 @@ Usage:
   puppet configure show
   puppet server foreground [--port 4017]; puppet server status [--port 4017]
   puppet instances [--port 4017]
-  puppet pages open --json '{"pages":[{"url":"https://example.com","waitUntil":"document"}]}'
+  puppet pages open --json '{"pages":[{"url":"https://example.com"}]}'
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"...","selector":"button"}]}'
   puppet run ./script.mjs [--port 4017] [--timeout-ms 120000]
   puppet exec --eval "const state = await server.start(); return state.status"
@@ -34,7 +34,7 @@ Help:
 const pages = `Puppet page API commands
 
 Commands:
-  puppet pages open --json '{"pages":[{"role":"page","url":"https://example.com","waitUntil":"document"}]}'
+  puppet pages open --json '{"pages":[{"role":"page","url":"https://example.com","waitUntil":"load"}]}'
   puppet pages active [--session-id SESSION]
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"...","deltaY":800}]}'
@@ -87,7 +87,7 @@ Commands:
   puppet server foreground --port 4017; puppet server status --port 4017
   puppet extension open --port 4021
 
-Default port 4017 is handled by the extension background worker. Custom ports require a URL-bound extension page.`;
+The extension uses one background-worker socket per Chrome profile. For custom ports, save the server URL in the extension settings so the singleton background worker reconnects.`;
 
 export const helpCommand = async (args) => {
     const key = args[0] || '';

@@ -76,14 +76,14 @@ export const runLiveAction = async (action: PageAction, emit: LiveEmit) => {
     }
     if (action.type === 'navigate_to_url') {
         const page = updatePageStatus(action.pageId || '', 'navigating');
-        await updatePageTab(page.pageId ? page.tabId || 0 : 0, action.url || '', action.waitUntil || 'document');
+        await updatePageTab(page.pageId ? page.tabId || 0 : 0, action.url || '', action.waitUntil || 'load');
         const next = await refreshPageMeta(action.pageId || '');
         emit('page.navigated', readPublicPage(next), next.sessionId);
         return readResult(action, readPublicPage(next));
     }
     if (action.type === 'reload_page') {
         const page = updatePageStatus(action.pageId || '', 'reloading');
-        await reloadPageTab(page.pageId ? page.tabId || 0 : 0, action.waitUntil || 'document');
+        await reloadPageTab(page.pageId ? page.tabId || 0 : 0, action.waitUntil || 'load');
         const next = await refreshPageMeta(action.pageId || '');
         emit('page.reloaded', readPublicPage(next), next.sessionId);
         return readResult(action, readPublicPage(next));
