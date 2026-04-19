@@ -27,7 +27,7 @@ const App = () => {
     }, []);
     return (
         <main className="app-shell">
-            <Toolbar leftTabId={state.leftTabId} rightTabId={state.rightTabId} selector={state.selector} loading={state.loading} remoteEntries={remoteSocket.entries} remoteInstanceId={remoteSocket.instanceId} remoteServerUrl={remote.activeSettings.serverUrl} remoteStatus={remoteSocket.status} showOpenInTab={showOpenInTab} tabs={state.tabs} onInspect={state.inspect} onRefresh={state.refreshTabs} onLeftTabChange={state.setLeftTabId} onRightTabChange={state.setRightTabId} onSelectorChange={state.setSelector} onOpenInTab={openInTab} onToggleSettings={() => setShowSettings((value) => !value)} />
+            <Toolbar leftTabId={state.leftTabId} rightTabId={state.rightTabId} selector={state.selector} loading={state.loading} remoteEntries={remoteSocket.entries} remoteInstanceId={remoteSocket.instanceId} remoteServerUrl={remoteSocket.serverUrl} remoteSource={remoteSocket.source} remoteStatus={remoteSocket.status} showOpenInTab={showOpenInTab} tabs={state.tabs} onInspect={state.inspect} onRefresh={state.refreshTabs} onLeftTabChange={state.setLeftTabId} onRightTabChange={state.setRightTabId} onSelectorChange={state.setSelector} onOpenInTab={openInTab} onRestartBackground={remoteSocket.restartBackground} onToggleSettings={() => setShowSettings((value) => !value)} />
             {state.error ? <div className="banner error">{state.error}</div> : null}
             {!state.error && remote.message && !showSettings ? <div className={`banner${remote.messageTone === 'danger' ? ' error' : ''}`}>{remote.message}</div> : null}
             {!state.error && state.loading ? <div className="banner">Reading DOM and computed styles from both tabs.</div> : null}

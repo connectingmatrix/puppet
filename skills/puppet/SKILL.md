@@ -25,6 +25,7 @@ Start and inspect state:
 Default port behavior:
 - Port `4017` is owned by the extension background worker and should not require an extension tab.
 - If `puppet instances` is empty but `puppet server status` is healthy, wait for the extension background worker or reload the installed extension once.
+- The sidepanel lamp mirrors the background worker when it targets the same server origin; custom ports use a sidepanel socket.
 - Configure once with `puppet configure chrome-extension://EXTENSION_ID/sidepanel.html`.
 - For a custom Chrome profile/port, run `puppet server start --port PORT`, then `puppet extension open --port PORT`.
 
@@ -65,5 +66,6 @@ Output rules:
 
 Troubleshooting:
 - `server_ready_no_instance` means the server is healthy but no extension instance is registered.
+- If the background worker is stuck, open the sidepanel lamp popup and click `Restart background worker`.
 - `Timed out waiting for script run` means the CLI/server returned correctly; split or raise `--timeout-ms` if the browser work is expected to be long.
 - For custom ports, keep the URL-bound extension page open for that port.

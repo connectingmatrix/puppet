@@ -22,6 +22,7 @@ button, input, select { font: inherit; }
 .status-lamp.is-disconnected { border-color: #c05252; background: #ef5d5d; box-shadow: 0 0 0 3px rgba(239, 93, 93, 0.18); }
 .lamp-popup { position: absolute; top: calc(100% + 10px); right: 0; z-index: 10; width: 320px; padding: 12px; border: 1px solid #d8e0ee; border-radius: 16px; background: rgba(255, 255, 255, 0.96); box-shadow: 0 16px 40px rgba(29, 36, 51, 0.12); }
 .lamp-meta { margin-top: 6px; color: #4f5a73; font-size: 12px; overflow-wrap: anywhere; }
+.lamp-restart { margin-top: 10px; }
 .lamp-list { margin-top: 12px; max-height: 220px; overflow: auto; display: grid; gap: 8px; }
 .lamp-entry { display: grid; gap: 4px; padding: 8px 10px; border-radius: 12px; background: #f4f6fb; font-size: 12px; }
 .lamp-entry.is-warn { background: #fff6be; }

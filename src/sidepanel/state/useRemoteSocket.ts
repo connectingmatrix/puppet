@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { runRemoteJob } from '@/src/background/job-runner';
 import { closeAllLivePages } from '@/src/background/page-session-work';
 import { setLiveEmitter } from '@/src/background/live-event-work';
+import { readBackgroundRemoteStatus, restartBackgroundRemote } from '@/src/sidepanel/state/background-remote';
 import { runRequestResolve } from '@/src/sidepanel/state/request-resolve';
 import { readBrowserId } from '@/src/background/browser-id-work';
 import { readRuntimeApi } from '@/src/shared/extension-api';
 import { RemoteEvent, RemoteMessage, RemoteSettings } from '@/src/shared/remote-types';
+import { readRemoteOrigin, RemoteSocketStatus } from '@/src/shared/remote-status';
 import { runWithLimit } from '@/src/shared/time-limit';
 
 const readSocketUrl = (serverUrl: string) => {
@@ -16,10 +18,12 @@ const readSocketUrl = (serverUrl: string) => {
 
 const readText = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
-export const useRemoteSocket = (loading: boolean, settings: RemoteSettings, enabled = true) => {
+export const useRemoteSocket = (loading: boolean, settings: RemoteSettings) => {
     const [entries, setEntries] = useState<RemoteEvent[]>([]);
+    const [backgroundStatus, setBackgroundStatus] = useState<RemoteSocketStatus | null>(null);
     const [instanceId] = useState(() => crypto.randomUUID());
     const [status, setStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
+    const enabled = Boolean(backgroundStatus && readRemoteOrigin(backgroundStatus.serverUrl) !== readRemoteOrigin(settings.serverUrl));
     const busyRef = useRef(false);
     const closedRef = useRef(false);
     const heartbeatRef = useRef(0);
@@ -70,6 +74,26 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings, enab
             void runNext();
         }
     };
+    const restartBackground = async () => {
+        try {
+            setBackgroundStatus(await restartBackgroundRemote());
+        } catch (error) {
+            setBackgroundStatus({ entries: [{ at: Date.now(), text: readText(error, 'Could not restart background worker.'), tone: 'danger' }], instanceId: 'background', serverUrl: settings.serverUrl, source: 'background', status: 'disconnected' });
+        }
+    };
+    useEffect(() => {
+        if (loading) return;
+        let closed = false;
+        const readStatus = () => readBackgroundRemoteStatus().then((next) => { if (!closed) setBackgroundStatus(next); }).catch((error) => {
+            if (!closed) setBackgroundStatus({ entries: [{ at: Date.now(), text: readText(error, 'Could not read background worker status.'), tone: 'danger' }], instanceId: 'background', serverUrl: settings.serverUrl, source: 'background', status: 'disconnected' });
+        });
+        void readStatus();
+        const timer = window.setInterval(readStatus, 1500);
+        return () => {
+            closed = true;
+            window.clearInterval(timer);
+        };
+    }, [loading, settings.serverUrl]);
     useEffect(() => {
         closedRef.current = false;
         jobsRef.current = [];
@@ -144,5 +168,6 @@ export const useRemoteSocket = (loading: boolean, settings: RemoteSettings, enab
             socketRef.current = null;
         };
     }, [enabled, instanceId, loading, settings.remoteEnabled, settings.serverUrl, settings.updatedAt]);
-    return { entries, instanceId, status };
+    const display = enabled ? { entries, instanceId, serverUrl: settings.serverUrl, source: 'sidepanel' as const, status } : backgroundStatus || { entries: [], instanceId: 'background', serverUrl: settings.serverUrl, source: 'background' as const, status: 'connecting' as const };
+    return { ...display, restartBackground };
 };

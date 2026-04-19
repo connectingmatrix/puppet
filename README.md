@@ -86,6 +86,8 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `server.stop()` only clears the local SDK browser binding; it does not stop the shared Puppet listener
 - use `server.stop({ force: true })` only when you intentionally want to kill a listener started by this SDK process
 - default-port automation does not require an extension page; the background worker registers itself with the server
+- the sidepanel status lamp mirrors the background worker on the same server origin and only opens its own socket for a different custom port
+- use the lamp popup's restart button if the background worker is connected to Chrome but stops responding
 - extension pages opened through `puppet extension open` or the skill launcher are only needed for custom-port binding
 - the opener does not create a new extension tab when the target server already has a connected instance
 - `await browser.newPage(url?, options?)` reuses the latest Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
