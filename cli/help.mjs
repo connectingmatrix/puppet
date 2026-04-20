@@ -43,7 +43,7 @@ Commands:
   puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"...","deltaY":800}]}'
   puppet pages data --json '{"pageId":"...","selector":"body"}'
   puppet pages diff --json '{"leftPageId":"...","rightPageId":"...","selector":"body"}'
-  puppet pages html --json '{"pageId":"...","selector":"main"}'; puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.png"}'
+  puppet pages html --json '{"pageId":"...","selector":"main"}'; puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.jpg"}'
   puppet pages release --json '{"pageId":"..."}'
   puppet pages close --json '{"pageId":"..."}'
 

@@ -82,8 +82,13 @@ export interface PageBrowserPayload {
 
 export interface PageScreenshotPayload {
     current?: boolean;
+    format?: string;
     fullPage?: boolean;
+    maxHeight?: number;
+    maxWidth?: number;
     pageId: string;
+    quality?: number;
+    scale?: number;
     selector?: string;
 }
 

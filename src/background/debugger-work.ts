@@ -53,9 +53,32 @@ const readFullClip = async (tabId: number) => {
     return { height: Math.max(size.height || 1, 1), scale: 1, width: Math.max(size.width || 1, 1), x: 0, y: 0 };
 };
 
-export const captureScreenshot = async (tabId: number, clip = null, current = false) => {
-    const nextClip = clip || current ? clip : await readFullClip(tabId);
-    const command = nextClip ? { captureBeyondViewport: true, clip: nextClip, format: 'png', fromSurface: true } : { format: 'png', fromSurface: true };
+const readCurrentClip = async (tabId: number) => {
+    const metrics = await sendDebug(tabId, 'Page.getLayoutMetrics');
+    const view = metrics.cssVisualViewport || metrics.visualViewport || {};
+    return { height: Math.max(view.clientHeight || 1, 1), scale: 1, width: Math.max(view.clientWidth || 1, 1), x: Math.max(view.pageX || 0, 0), y: Math.max(view.pageY || 0, 0) };
+};
+
+export const readScreenshotMime = (format = 'jpeg') => format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg';
+
+const readNumber = (value, next: number) => Number.isFinite(Number(value)) ? Number(value) : next;
+const readShot = (options: any = {}) => {
+    const format = options.format === 'png' || options.format === 'webp' ? options.format : 'jpeg';
+    return { format, maxHeight: readNumber(options.maxHeight, 2600), maxWidth: readNumber(options.maxWidth, 1100), quality: Math.max(1, Math.min(100, Math.round(readNumber(options.quality, 28)))), scale: readNumber(options.scale, 0) };
+};
+const readScaledClip = (clip, shot) => {
+    if (!clip) return null;
+    const width = Math.max(readNumber(clip.width, 1), 1);
+    const height = Math.max(readNumber(clip.height, 1), 1);
+    const scale = shot.scale || Math.max(0.35, Math.min(1, shot.maxWidth / width, shot.maxHeight / height));
+    return { ...clip, height, scale: Math.min(1, scale), width };
+};
+
+export const captureScreenshot = async (tabId: number, clip = null, current = false, options: any = {}) => {
+    const shot = readShot(options);
+    const nextClip = readScaledClip(clip || (current ? await readCurrentClip(tabId) : await readFullClip(tabId)), shot);
+    const command: any = { captureBeyondViewport: true, clip: nextClip, format: shot.format, fromSurface: true };
+    if (shot.format === 'jpeg' || shot.format === 'webp') command.quality = shot.quality;
     const result = await sendDebug(tabId, 'Page.captureScreenshot', command, 90000);
     return result.data || '';
 };

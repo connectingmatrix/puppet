@@ -1,4 +1,4 @@
-import { captureScreenshot, closeDebugTab, resizeViewport } from '@/src/background/debugger-work';
+import { captureScreenshot, closeDebugTab, readScreenshotMime, resizeViewport } from '@/src/background/debugger-work';
 import { readPageFrames } from '@/src/background/page-frame-work';
 import { dropLivePage, listLivePages, patchLivePage, readLivePage, saveLivePage } from '@/src/background/page-store';
 import { closePageTab as closeTab, openPageTab, readPageBox, readPageHtml, readTabMeta } from '@/src/background/tab-work';
@@ -70,11 +70,11 @@ export const readLiveHtml = async (pageId: string, selector = '', frameId = 0, i
     return { html: await readPageHtml(page.tabId || 0, selector, frameId, index), pageId, selector, url: page.url };
 };
 
-export const readLiveShot = async (pageId: string, selector = '', current = false) => {
+export const readLiveShot = async (pageId: string, selector = '', current = false, options: any = {}) => {
     const page = readPage(pageId);
     const box = selector ? await readPageBox(page.tabId || 0, selector) : null;
     const clip = box ? { height: Math.max(box.height, 1), scale: 1, width: Math.max(box.width, 1), x: Math.max(box.left, 0), y: Math.max(box.top, 0) } : null;
-    return { dataBase64: await captureScreenshot(page.tabId || 0, clip, current), mimeType: 'image/png', pageId };
+    return { dataBase64: await captureScreenshot(page.tabId || 0, clip, current, options), mimeType: readScreenshotMime(options.format), pageId };
 };
 
 export const listPageFrames = async (pageId: string) => {

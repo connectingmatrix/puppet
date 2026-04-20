@@ -137,7 +137,7 @@ page.on('request', async (request) => {
   else await request.continue();
 });
 await page.goto('https://example.com', { waitUntil: 'networkidle2' });
-await page.screenshot({ path: '/tmp/example.png' });
+await page.screenshot({ path: '/tmp/example.jpg' });
 const fileInput = await page.waitForSelector('input[type=file]');
 await fileInput.uploadFile(['/absolute/path/file.txt']);
 const frames = await page.iframes();
@@ -200,7 +200,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
 - `await page.data(selector, { compact })`; snapshot output is hard disabled
-- `await page.screenshot({ selector, current, path })` captures the full page by default; pass `{ current: true }` for only the visible viewport
+- `await page.screenshot({ selector, current, path, format, quality, maxWidth, maxHeight })` captures compressed readable JPEG by default; pass `{ format: 'png' }` for lossless output
 - `await page.compare(otherPage, options?)`
 - `await page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`
 - `await page.frames()`
@@ -396,9 +396,9 @@ console.log(accessToken, payload.data, response.status, html.status);
   raw: `{ "type": "get_page_data", "pageId": "PAGE_ID", "selector": ".card" }`
 - `get_page_html`: `await page.html('#main')`
   raw: `{ "type": "get_page_html", "pageId": "PAGE_ID", "selector": "#main" }`
-- `screenshot_page`: `await page.screenshot({ path: '/tmp/full.png' })`
+- `screenshot_page`: `await page.screenshot({ path: '/tmp/full.jpg' })`
   raw: `{ "type": "screenshot_page", "pageId": "PAGE_ID" }`
-- `screenshot_page` current viewport: `await page.screenshot({ current: true, path: '/tmp/current.png' })`
+- `screenshot_page` current viewport: `await page.screenshot({ current: true, path: '/tmp/current.jpg' })`
   raw: `{ "type": "screenshot_page", "pageId": "PAGE_ID", "current": true }`
 - `close_page`: `await page.close()`
   raw: `{ "type": "close_page", "pageId": "PAGE_ID" }`
@@ -478,7 +478,7 @@ The Google suite does this:
 - clicks a random visible suggestion
 - verifies a results selector exists
 - scrolls the results page
-- writes a screenshot to `/Users/abeer/dev/chrome_extension_utils/artifacts/google-suite.png`
+- writes a compressed screenshot to `/Users/abeer/dev/chrome_extension_utils/artifacts/google-suite.jpg`
 
 ## Notes
 

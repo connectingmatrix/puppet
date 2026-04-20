@@ -31,6 +31,7 @@ export interface PageAction {
     deltaY?: number;
     enabled?: boolean;
     files?: string[];
+    format?: string;
     frameId?: number;
     fullPage?: boolean;
     fulfill?: InterceptFulfill;
@@ -41,15 +42,19 @@ export interface PageAction {
     key?: string;
     leftPageId?: string;
     match?: InterceptMatch;
+    maxHeight?: number;
+    maxWidth?: number;
     mode?: InterceptMode;
     pageId?: string;
     path?: string;
+    quality?: number;
     recordId?: string;
     requestId?: string;
     resetViewport?: boolean;
     rightPageId?: string;
     role?: string;
     ruleId?: string;
+    scale?: number;
     script?: string;
     selector?: string;
     snapshot?: boolean;

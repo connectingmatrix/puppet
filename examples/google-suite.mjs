@@ -11,7 +11,7 @@ await page.click("[role='option']", { index: Math.max(0, Math.min((count || 1) -
 await page.waitForSelector('#search, #center_col, a h3', { timeoutMs: 30000 });
 const state = { href: await page.url(), title: await page.evaluate(() => document.title) };
 await page.scroll({ deltaY: 900 });
-await page.screenshot({ path: '/Users/abeer/dev/chrome_extension_utils/artifacts/google-suite.png' });
-console.log(JSON.stringify({ ok: true, pageId: page.pageId, screenshotPath: '/Users/abeer/dev/chrome_extension_utils/artifacts/google-suite.png', state }, null, 2));
+await page.screenshot({ path: '/Users/abeer/dev/chrome_extension_utils/artifacts/google-suite.jpg' });
+console.log(JSON.stringify({ ok: true, pageId: page.pageId, screenshotPath: '/Users/abeer/dev/chrome_extension_utils/artifacts/google-suite.jpg', state }, null, 2));
 await browser.close();
 server.stop();

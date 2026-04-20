@@ -22,7 +22,7 @@ Live page APIs:
   POST /api/pages/html        Body { pageId, selector?, frameId?, index?, raw? }. Compact by default when large.
   POST /api/pages/request     Body { pageId, url?, method?, headers?, body?, auth?, credentials? }. Fetches from the extension API path.
   POST /api/pages/frames      Body { pageId }. Returns frame metadata.
-  POST /api/pages/screenshot Body { pageId, selector?, current?, raw? }. Compact by default when large.
+  POST /api/pages/screenshot Body { pageId, selector?, current?, format?, quality?, maxWidth?, maxHeight?, raw? }. Returns compressed JPEG by default.
   POST /api/pages/release    Body { pageId }. Releases debugger binding without closing the tab.
   POST /api/pages/close       Body { pageId }. Returns { pageId }.
   POST /api/pages/run         Body { script, sessionId?, pages?, args?, timeoutMs?, closeOnExit?, raw? }. Compact by default when large.
@@ -77,7 +77,7 @@ SDK page helpers and returns:
   page.evaluate(fnOrScript, ...args) -> escape hatch for browser globals and non-DOM page context.
   page.html(selector?) -> { ok, pageId, html, selector, url }.
   page.data(selector, { compact }) -> selector detail. Snapshot output is hard disabled.
-  page.screenshot({ path?, selector?, current? }) -> writes path when supplied and omits base64 from the returned object unless raw:true is passed.
+  page.screenshot({ path?, selector?, current?, format?, quality?, maxWidth?, maxHeight? }) -> compressed JPEG by default; writes path and omits base64 unless raw:true is passed.
   page.compare(page2, options?) and page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
   page.frames(), page.iframes() -> frame metadata array. page.frame(frameId), page.iframe[frameId] -> frame-scoped Page.
   page.request(options), page.request.fetch(url, options) -> API-backed HTTP response data from current session context.
