@@ -44,7 +44,7 @@ export interface RemoteMessage {
     type: string;
 }
 
-export type RemoteJobKind = 'compare-pages' | 'compare-selector' | 'inspect-selector' | 'pages-actions' | 'pages-active' | 'pages-browser' | 'pages-close' | 'pages-data' | 'pages-diff' | 'pages-frames' | 'pages-html' | 'pages-open' | 'pages-run' | 'pages-screenshot';
+export type RemoteJobKind = 'compare-pages' | 'compare-selector' | 'inspect-selector' | 'pages-actions' | 'pages-active' | 'pages-browser' | 'pages-close' | 'pages-data' | 'pages-diff' | 'pages-frames' | 'pages-html' | 'pages-open' | 'pages-release' | 'pages-run' | 'pages-screenshot';
 export interface ScreenSize {
     height: number;
     name: string;

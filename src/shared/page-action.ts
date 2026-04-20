@@ -46,6 +46,7 @@ export interface PageAction {
     path?: string;
     recordId?: string;
     requestId?: string;
+    resetViewport?: boolean;
     rightPageId?: string;
     role?: string;
     ruleId?: string;

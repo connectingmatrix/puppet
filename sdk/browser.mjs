@@ -41,7 +41,7 @@ export class Browser {
             if (page) {
                 this.sessionId = page.sessionId || this.sessionId;
                 let next = page;
-                if (url && url !== 'about:blank') next = new Page(this, await page.goto(url, options));
+                if (url && url !== 'about:blank') next = new Page(this, await page.goto(url, { ...options, resetViewport: !(options.width && options.height) }));
                 if (options.width && options.height) await next.setViewport({ height: options.height, width: options.width });
                 return next;
             }
@@ -64,11 +64,7 @@ export class Browser {
         return items;
     }
     async sessionPages() {
-        this.openLive();
-        const data = await requestJson(this.baseUrl, `/api/pages/active?raw=1&sessionId=${encodeURIComponent(this.sessionId || '')}`);
-        const items = [];
-        for (const item of data.items || []) items.push(new Page(this, item));
-        return items;
+        return this.pages();
     }
     async close(options = {}) {
         if (options.keepPagesOpen || this.keepPagesOpen) {
@@ -77,7 +73,10 @@ export class Browser {
             return { keptPagesOpen: true };
         }
         const pages = await this.sessionPages();
-        for (const page of pages) await page.close();
+        for (const page of pages) {
+            if (this.sessionId && page.sessionId === this.sessionId && page.role !== 'browser') await page.close();
+            else await page.release();
+        }
         this.live.close();
         this.sessionId = '';
         return { keptPagesOpen: false };

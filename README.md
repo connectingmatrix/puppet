@@ -151,8 +151,8 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await browser.newPage(url?, options?)` reuses the latest Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
 - `await browser.pages()` returns all open browser tabs bound as Puppet pages
-- `await browser.sessionPages()` returns only pages opened in the current Puppet session
-- `await browser.close()` closes session pages; `await browser.close({ keepPagesOpen: true })` leaves tabs open
+- `await browser.sessionPages()` returns all bindable Chrome pages, including tabs not opened by Puppet
+- `await browser.close()` closes tabs opened by the current Puppet session and releases debugger bindings for other bound tabs; `await browser.close({ keepPagesOpen: true })` leaves everything open
 - `await page.goto(url, options?)`
 - `await page.reload(options?)`
 - `await page.setViewport({ width, height })`
@@ -201,6 +201,7 @@ Live routes:
 - `POST /api/pages/frames`
 - `POST /api/pages/screenshot`
 - `POST /api/pages/run`
+- `POST /api/pages/release`
 - `POST /api/pages/close`
 
 Legacy routes:
@@ -456,6 +457,6 @@ The Google suite does this:
 - Each registration includes a stable `browserId`, and the server keeps only one connected instance per browser id
 - `browser.newPage()` reuses the latest Puppet-controlled tab by default; across separate Codex script runs it first binds an existing browser tab, then navigates that tab
 - use `{ newTab: true }` for intentional multi-page comparisons
-- Page sessions are in memory and disappear if the server restarts or the owning extension instance disconnects
+- Bound page records are in memory and disappear if the server restarts or the owning extension instance disconnects
 - Custom-port extension pages must stay open while SDK or REST work is running on that custom port
 - The packaged extension artifact is `/Users/abeer/dev/chrome_extension_utils/artifacts/puppet.crx`

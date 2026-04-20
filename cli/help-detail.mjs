@@ -13,7 +13,7 @@ Server and instance APIs:
   WS   /api/live and /api/socket are client and extension socket control channels.
 
 Live page APIs:
-  GET  /api/pages/active      Returns { ok, items } for live pages. Use --session-id with CLI.
+  GET  /api/pages/active      Returns { ok, items } for bindable Chrome pages across windows.
   GET  /api/pages/browser     Returns all visible browser tabs as bindable pages.
   POST /api/pages/open        Body { pages, sessionId?, actions? }. Returns { sessionId, pages }.
   POST /api/pages/actions     Body { actions }. Returns { results }.
@@ -22,6 +22,7 @@ Live page APIs:
   POST /api/pages/html        Body { pageId, selector?, frameId?, index?, raw? }. Compact by default when large.
   POST /api/pages/frames      Body { pageId }. Returns frame metadata.
   POST /api/pages/screenshot Body { pageId, selector?, current?, raw? }. Compact by default when large.
+  POST /api/pages/release    Body { pageId }. Releases debugger binding without closing the tab.
   POST /api/pages/close       Body { pageId }. Returns { pageId }.
   POST /api/pages/run         Body { script, sessionId?, pages?, args?, timeoutMs?, closeOnExit?, raw? }. Compact by default when large.
 
@@ -40,6 +41,7 @@ CLI API equivalents:
   puppet pages diff --json '{"leftPageId":"LEFT","rightPageId":"RIGHT","selector":"body"}'
   puppet pages html --json '{"pageId":"PAGE","selector":"main"}'
   puppet pages frames --json '{"pageId":"PAGE"}'; puppet pages screenshot --json '{"pageId":"PAGE","current":true}'
+  puppet pages release --json '{"pageId":"PAGE"}'
   puppet pages close --json '{"pageId":"PAGE"}'
   puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'
   puppet run ./script.mjs --timeout-ms 180000
@@ -57,8 +59,8 @@ Action types:
 SDK browser helpers and returns:
   server.start({ port }) -> { browser, status, port, baseUrl, extensionUrl, instanceId }.
   browser.newPage(url?, options?) -> Page. Reuses a controlled page unless newTab or reuse:false is passed.
-  browser.pages() -> Page[] for visible tabs. browser.sessionPages() -> Page[] for the current session.
-  browser.close() -> closes session pages and clears live socket state. browser.close({ keepPagesOpen:true }) leaves tabs open.
+  browser.pages() -> Page[] for visible tabs. browser.sessionPages() -> Page[] for all bindable Chrome pages.
+  browser.close() -> closes current-session Puppet tabs, releases other debugger bindings, and clears live socket state. browser.close({ keepPagesOpen:true }) leaves tabs open.
 
 SDK page helpers and returns:
   page.goto(url, options?), page.reload(options?), page.setViewport(size) -> public page metadata.

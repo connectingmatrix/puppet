@@ -1,7 +1,7 @@
 import { readCompareResult, readInspectResult } from '@/src/background/result-shape';
 import { listBrowserPages } from '@/src/background/page-browser-work';
 import { bindPageActions, runLiveActions } from '@/src/background/page-action-work';
-import { closeLiveSessionPage, listPageFrames, LiveEmit, openLivePages, readLiveHtml, readLiveShot, readPageState, readPublicPage } from '@/src/background/page-session-work';
+import { closeLiveSessionPage, listPageFrames, LiveEmit, openLivePages, readLiveHtml, readLiveShot, readPageState, readPublicPage, releaseLivePage } from '@/src/background/page-session-work';
 import { captureLiveTab, capturePageTab } from '@/src/background/tab-work';
 import { readSizes } from '@/src/shared/size-work';
 import { ComparePagesPayload, CompareSelectorPayload, InspectSelectorPayload, RemoteJob } from '@/src/shared/remote-types';
@@ -84,6 +84,7 @@ export const runRemoteJob = async (job: RemoteJob, instanceId: string, emit: Liv
     if (job.kind === 'pages-frames') return { items: await listPageFrames((job.payload as any).pageId) };
     if (job.kind === 'pages-html') return readLiveHtml((job.payload as any).pageId, (job.payload as any).selector || '', (job.payload as any).frameId || 0, (job.payload as any).index || 0);
     if (job.kind === 'pages-screenshot') return readLiveShot((job.payload as any).pageId, (job.payload as any).selector || '', Boolean((job.payload as any).current) || (job.payload as any).fullPage === false);
+    if (job.kind === 'pages-release') return releaseLivePage((job.payload as any).pageId, emit);
     if (job.kind === 'pages-close') return closeLiveSessionPage((job.payload as any).pageId, emit);
     return readInspect(instanceId, job.payload as InspectSelectorPayload, emit);
 };

@@ -17,12 +17,14 @@ import { readNodeDetail, readDomSnapshot } from '@/src/sidepanel/lib/page-reader
 const rootWaitMs = 30000;
 const rootSettleMs = 700;
 const rootPollMs = 250;
+const readOpenWindow = async () => chrome.windows.getLastFocused({ windowTypes: ['normal'] });
 const readWaitError = (selector: string, state: { loading: boolean; title: string; url: string }) => state.loading
     ? `The page is still showing a loading shell while waiting for ${selector}. Final URL: ${state.url}. Final title: ${state.title}.`
     : `No visible element matches ${selector} after waiting for GraphQL and page render. Final URL: ${state.url}. Final title: ${state.title}.`;
 
 export const openPageTab = async (url: string, active: boolean, waitUntil = 'load') => {
-    const tab = await chrome.tabs.create({ active, url });
+    const win = await readOpenWindow();
+    const tab = await chrome.tabs.create({ active, url, windowId: win.id });
     const tabId = tab.id || 0;
     await waitForTab(tabId);
     await ensureDebugTab(tabId);

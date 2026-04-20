@@ -57,7 +57,8 @@ Script scope for `puppet run` and `puppet exec`:
 - Throw when `browser` is null: `if (!state.browser) throw new Error('Puppet not ready: ' + state.status)`.
 - `browser.pages()` lists all currently open browser tabs the extension can bind.
 - `browser.newPage(url, options)` reuses a controlled tab by default; pass `{ newTab: true }` only for intentional extra tabs.
-- Use `await browser.close()` to close session pages opened by that browser.
+- Use `await browser.close()` to close current-session pages opened by Puppet.
+- `browser.close()` releases debugger bindings from bound tabs that it does not close.
 - For anti-bot sensitive sites, use `server.start({ keepPagesOpen: true })` and `browser.close({ keepPagesOpen: true })` so the SDK disconnects without closing tabs.
 
 SDK capabilities:

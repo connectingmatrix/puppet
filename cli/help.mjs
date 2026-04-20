@@ -43,6 +43,7 @@ Commands:
   puppet pages data --json '{"pageId":"...","selector":"body"}'
   puppet pages diff --json '{"leftPageId":"...","rightPageId":"...","selector":"body"}'
   puppet pages html --json '{"pageId":"...","selector":"main"}'; puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.png"}'
+  puppet pages release --json '{"pageId":"..."}'
   puppet pages close --json '{"pageId":"..."}'
 
 Action array example:

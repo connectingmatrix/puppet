@@ -1,4 +1,4 @@
-import { captureScreenshot, resizeViewport } from '@/src/background/debugger-work';
+import { captureScreenshot, closeDebugTab, resizeViewport } from '@/src/background/debugger-work';
 import { readPageFrames } from '@/src/background/page-frame-work';
 import { dropLivePage, listLivePages, patchLivePage, readLivePage, saveLivePage } from '@/src/background/page-store';
 import { closePageTab as closeTab, openPageTab, readPageBox, readPageHtml, readTabMeta } from '@/src/background/tab-work';
@@ -42,6 +42,13 @@ export const listSessionPages = (sessionId = '') => listLivePages().filter((page
 export const closeLiveSessionPage = async (pageId: string, emit: LiveEmit) => {
     const page = readPage(pageId);
     await closeTab(page.tabId || 0);
+    dropLivePage(pageId);
+    emit('page.closed', { pageId, sessionId: page.sessionId }, page.sessionId);
+    return { pageId };
+};
+export const releaseLivePage = async (pageId: string, emit: LiveEmit) => {
+    const page = readPage(pageId);
+    await closeDebugTab(page.tabId || 0);
     dropLivePage(pageId);
     emit('page.closed', { pageId, sessionId: page.sessionId }, page.sessionId);
     return { pageId };

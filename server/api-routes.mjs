@@ -1,6 +1,6 @@
 import express from 'express';
 import { readCompactResult } from './compact-result.mjs';
-import { listPages, readLivePage } from './live-store.mjs';
+import { readLivePage, savePage } from './live-store.mjs';
 import { runRouteCompare } from './route-compare.mjs';
 import { runScript } from './script-runner.mjs';
 import { readActions, readSnapshotFlag } from './snapshot-policy.mjs';
@@ -15,6 +15,18 @@ const readPageInstance = (pageId = '') => {
 const readJobInstance = (body) => body.instanceId || readPageInstance(body.pageId || '') || readPageInstance(body.leftPageId || '') || readPageInstance(body.rightPageId || '');
 const readBaseUrl = (request) => `${request.protocol}://${request.get('host')}`;
 const send = async (request, response, kind, value) => response.json(await readCompactResult(kind, value, request));
+const syncBrowserPages = (value = {}) => {
+    for (const item of value.items || []) savePage(item);
+    return value;
+};
+const sendBrowserPages = async (request, response, kind) => {
+    try {
+        const result = await createJob('pages-browser', { sessionId: request.query.sessionId || '' }, `${request.query.instanceId || ''}`, 45000);
+        await send(request, response, kind, syncBrowserPages({ ok: true, ...result.result }));
+    } catch (error) {
+        response.status(409).json({ error: error.message, ok: false });
+    }
+};
 const runLegacyJob = async (request, response, kind, payload, body) => {
     try {
         const result = await createJob(kind, payload, body.instanceId || '', readTimeout(body));
@@ -34,15 +46,8 @@ const runLiveJob = async (request, response, kind, payload, body) => {
 
 router.get('/health', (_request, response) => response.json({ ok: true }));
 router.get('/instances', (request, response) => send(request, response, 'instances', { items: listInstances(), ok: true }));
-router.get('/pages/active', (request, response) => send(request, response, 'pages-active', { items: listPages(request.query.sessionId || ''), ok: true }));
-router.get('/pages/browser', async (request, response) => {
-    try {
-        const result = await createJob('pages-browser', { sessionId: request.query.sessionId || '' }, `${request.query.instanceId || ''}`, 45000);
-        await send(request, response, 'pages-browser', { ok: true, ...result.result });
-    } catch (error) {
-        response.status(409).json({ error: error.message, ok: false });
-    }
-});
+router.get('/pages/active', (request, response) => sendBrowserPages(request, response, 'pages-active'));
+router.get('/pages/browser', (request, response) => sendBrowserPages(request, response, 'pages-browser'));
 router.post('/compare/routes', async (request, response) => {
     try {
         const result = await runRouteCompare(readBaseUrl(request), request.body || {});
@@ -69,6 +74,7 @@ router.post('/pages/run', async (request, response) => {
     }
 });
 router.post('/pages/screenshot', (request, response) => runLiveJob(request, response, 'pages-screenshot', { current: Boolean(request.body.current) || request.body.fullPage === false, pageId: request.body.pageId, selector: request.body.selector || '' }, request.body));
+router.post('/pages/release', (request, response) => runLiveJob(request, response, 'pages-release', { pageId: request.body.pageId }, request.body));
 router.post('/pages/close', (request, response) => runLiveJob(request, response, 'pages-close', { pageId: request.body.pageId }, request.body));
 
 export default router;

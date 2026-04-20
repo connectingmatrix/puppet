@@ -2,7 +2,7 @@ import { readCompareResult, readInspectResult } from '@/src/background/result-sh
 import { captureLiveTab, reloadPageTab, runPageAction, updatePageTab } from '@/src/background/tab-work';
 import { saveRecord, readRecord, patchLivePage } from '@/src/background/page-store';
 import { closeLiveSessionPage, LiveEmit, readLiveHtml, readLiveShot, readPageState, readPublicPage, refreshPageMeta, updatePageStatus } from '@/src/background/page-session-work';
-import { resizeViewport } from '@/src/background/debugger-work';
+import { clearViewport, resizeViewport } from '@/src/background/debugger-work';
 import { resolveInterceptRequest, saveInterceptRule, setRequestInterception } from '@/src/background/intercept-work';
 import { PageAction } from '@/src/shared/page-action';
 import { LivePage } from '@/src/shared/page-session';
@@ -76,7 +76,9 @@ export const runLiveAction = async (action: PageAction, emit: LiveEmit) => {
     }
     if (action.type === 'navigate_to_url') {
         const page = updatePageStatus(action.pageId || '', 'navigating');
-        await updatePageTab(page.pageId ? page.tabId || 0 : 0, action.url || '', action.waitUntil || 'load');
+        const tabId = page.pageId ? page.tabId || 0 : 0;
+        if (action.resetViewport) await clearViewport(tabId);
+        await updatePageTab(tabId, action.url || '', action.waitUntil || 'load');
         const next = await refreshPageMeta(action.pageId || '');
         emit('page.navigated', readPublicPage(next), next.sessionId);
         return readResult(action, readPublicPage(next));
