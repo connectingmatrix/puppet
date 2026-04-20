@@ -5,7 +5,7 @@ import { runAction, runActions } from './action.mjs';
 import { ConsoleMessage, RequestHandle } from './event.mjs';
 import { saveBase64 } from './file.mjs';
 import { readNodeItems, readNodeMatch, readNodePath, readNodeValue } from './query.mjs';
-import { runPageGraphql, runPageRequest, LocalStorageStore } from './request.mjs';
+import { runPageGraphql, readPageRequestClient, LocalStorageStore } from './request.mjs';
 
 class Keyboard { constructor(page) { this.page = page; } press(key, options = {}) { return runAction(this.page, { ...options, key, type: 'send_key' }); } }
 const readEvent = (page, name, event) => name === 'console' ? new ConsoleMessage(event) : name === 'request' ? new RequestHandle(page, event) : event;
@@ -13,7 +13,7 @@ const readScript = (script) => script && script.call && script.apply ? `return (
 
 export class Page {
     constructor(browser, item, frameId = 0) {
-        this.baseUrl = browser.baseUrl; this.browser = browser; this.frameId = frameId; this.iframe = new Proxy((value) => this.frame(value), { get: (_target, key) => this.frame(Number(key) || 0) }); this.keyboard = new Keyboard(this); this.localStorage = new LocalStorageStore(this);
+        this.baseUrl = browser.baseUrl; this.browser = browser; this.frameId = frameId; this.iframe = new Proxy((value) => this.frame(value), { get: (_target, key) => this.frame(Number(key) || 0) }); this.keyboard = new Keyboard(this); this.localStorage = new LocalStorageStore(this); this.request = readPageRequestClient(this);
         this.active = Boolean(item.active); this.pageId = item.pageId; this.pageName = item.pageName || item.title || ''; this.pageStats = item.pageStats || { cpu: 0, heapUsage: 0, ram: 0 }; this.pageUrl = item.pageUrl || item.url || ''; this.role = item.role || ''; this.sessionId = item.sessionId || browser.sessionId; this.tabId = item.tabId || 0;
     }
     run(actions) { return runActions(this, actions); }
@@ -50,7 +50,6 @@ export class Page {
     MouseScroll(x = 0, y = 0, options = {}) { return runAction(this, { ...options, deltaX: options.deltaX || 0, deltaY: options.deltaY || options.deltaY === 0 ? options.deltaY : 900, type: 'scroll', x, y }); }
     submit(selector, options = {}) { return runAction(this, { ...options, selector, type: 'submit' }); }
     evaluate(script, ...args) { return runAction(this, { args, script: readScript(script), type: 'execute_script' }); }
-    request(options = {}) { return runPageRequest(this, options); }
     graphql(query, options = {}) { return runPageGraphql(this, query, options); }
     url() { return this.evaluate(() => location.href); }
     location(part = '') { return part ? this.evaluate((name) => location[name] || '', part) : this.evaluate(() => ({ hash: location.hash, host: location.host, hostname: location.hostname, href: location.href, origin: location.origin, pathname: location.pathname, port: location.port, protocol: location.protocol, search: location.search })); }

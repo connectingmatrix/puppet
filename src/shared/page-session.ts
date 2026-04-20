@@ -95,3 +95,13 @@ export interface PageRunPayload {
     sessionId?: string;
     timeoutMs?: number;
 }
+
+export interface PageRequestPayload {
+    auth?: unknown;
+    body?: unknown;
+    credentials?: string;
+    headers?: Record<string, string>;
+    method?: string;
+    pageId: string;
+    url?: string;
+}

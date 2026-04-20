@@ -195,6 +195,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.submit(selector, options?)`
 - `await page.evaluate(scriptOrFunction, ...args)` for browser globals and non-DOM escape hatches
 - `await page.request({ method, url, headers, body, auth })`
+- `await page.request.fetch(url, { method?, headers?, body?, auth?, credentials? })`
 - `await page.graphql(query, { variables, url, auth })`
 - `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
@@ -223,6 +224,7 @@ Live routes:
 - `POST /api/pages/diff`
 - `POST /api/pages/data`
 - `POST /api/pages/html`
+- `POST /api/pages/request`
 - `POST /api/pages/frames`
 - `POST /api/pages/screenshot`
 - `POST /api/pages/run`
@@ -358,7 +360,8 @@ const response = await page.request({
   url: '/api/v2/graphql',
   body: { query: 'query Ping { __typename }' }
 });
-console.log(accessToken, payload.data, response.status);
+const html = await page.request.fetch('/docs', { auth: 'none' });
+console.log(accessToken, payload.data, response.status, html.status);
 ```
 
 ## Action Reference

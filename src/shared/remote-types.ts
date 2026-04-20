@@ -1,5 +1,5 @@
 import { PageAction } from '@/src/shared/page-action';
-import { LivePage, OpenPagesPayload, PageActionsPayload, PageBrowserPayload, PageClosePayload, PageDataPayload, PageDiffPayload, PageFramesPayload, PageHtmlPayload, PageRunPayload, PageScreenshotPayload } from '@/src/shared/page-session';
+import { LivePage, OpenPagesPayload, PageActionsPayload, PageBrowserPayload, PageClosePayload, PageDataPayload, PageDiffPayload, PageFramesPayload, PageHtmlPayload, PageRequestPayload, PageRunPayload, PageScreenshotPayload } from '@/src/shared/page-session';
 
 export interface RemoteSettings {
     debugForeground: boolean;
@@ -44,7 +44,7 @@ export interface RemoteMessage {
     type: string;
 }
 
-export type RemoteJobKind = 'compare-pages' | 'compare-selector' | 'inspect-selector' | 'pages-actions' | 'pages-active' | 'pages-browser' | 'pages-close' | 'pages-data' | 'pages-diff' | 'pages-frames' | 'pages-html' | 'pages-open' | 'pages-release' | 'pages-run' | 'pages-screenshot';
+export type RemoteJobKind = 'compare-pages' | 'compare-selector' | 'inspect-selector' | 'pages-actions' | 'pages-active' | 'pages-browser' | 'pages-close' | 'pages-data' | 'pages-diff' | 'pages-frames' | 'pages-html' | 'pages-open' | 'pages-release' | 'pages-request' | 'pages-run' | 'pages-screenshot';
 export interface ScreenSize {
     height: number;
     name: string;
@@ -95,5 +95,5 @@ export const presetSizes: ScreenSize[] = [
     { name: 'mobile', width: 390, height: 844 }
 ];
 
-export type LiveJobPayload = ComparePagesPayload | CompareSelectorPayload | InspectSelectorPayload | OpenPagesPayload | PageActionsPayload | PageBrowserPayload | PageClosePayload | PageDataPayload | PageDiffPayload | PageFramesPayload | PageHtmlPayload | PageRunPayload | PageScreenshotPayload;
+export type LiveJobPayload = ComparePagesPayload | CompareSelectorPayload | InspectSelectorPayload | OpenPagesPayload | PageActionsPayload | PageBrowserPayload | PageClosePayload | PageDataPayload | PageDiffPayload | PageFramesPayload | PageHtmlPayload | PageRequestPayload | PageRunPayload | PageScreenshotPayload;
 export type { LivePage };

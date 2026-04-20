@@ -65,6 +65,7 @@ router.post('/pages/diff', (request, response) => runLiveJob(request, response, 
 router.post('/pages/data', (request, response) => runLiveJob(request, response, 'pages-data', { pageId: request.body.pageId, path: request.body.path || 'root', selector: request.body.selector, snapshot: readSnapshotFlag() }, request.body));
 router.post('/pages/frames', (request, response) => runLiveJob(request, response, 'pages-frames', { pageId: request.body.pageId }, request.body));
 router.post('/pages/html', (request, response) => runLiveJob(request, response, 'pages-html', { frameId: request.body.frameId || 0, index: request.body.index || 0, pageId: request.body.pageId, selector: request.body.selector || '' }, request.body));
+router.post('/pages/request', (request, response) => runLiveJob(request, response, 'pages-request', { auth: request.body.auth, body: request.body.body, credentials: request.body.credentials, headers: request.body.headers || {}, method: request.body.method || '', pageId: request.body.pageId, url: request.body.url || '' }, request.body));
 router.post('/pages/run', async (request, response) => {
     try {
         const result = await runScript(readBaseUrl(request), request.body || {});

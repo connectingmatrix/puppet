@@ -20,6 +20,7 @@ Live page APIs:
   POST /api/pages/data        Body { pageId, selector, path?, raw? }. Compact by default when large.
   POST /api/pages/diff        Body { leftPageId, rightPageId, selector, path?, raw? }. Compact by default when large.
   POST /api/pages/html        Body { pageId, selector?, frameId?, index?, raw? }. Compact by default when large.
+  POST /api/pages/request     Body { pageId, url?, method?, headers?, body?, auth?, credentials? }. Fetches from the extension API path.
   POST /api/pages/frames      Body { pageId }. Returns frame metadata.
   POST /api/pages/screenshot Body { pageId, selector?, current?, raw? }. Compact by default when large.
   POST /api/pages/release    Body { pageId }. Releases debugger binding without closing the tab.
@@ -79,7 +80,7 @@ SDK page helpers and returns:
   page.screenshot({ path?, selector?, current? }) -> writes path when supplied and omits base64 from the returned object unless raw:true is passed.
   page.compare(page2, options?) and page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
   page.frames(), page.iframes() -> frame metadata array. page.frame(frameId), page.iframe[frameId] -> frame-scoped Page.
-  page.request(options) -> HTTP response data from current session context.
+  page.request(options), page.request.fetch(url, options) -> API-backed HTTP response data from current session context.
   page.graphql(query, options) -> GraphQL response data.
   page.localStorage.get/set/remove/all -> localStorage values.
 

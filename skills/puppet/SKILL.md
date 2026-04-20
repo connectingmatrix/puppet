@@ -69,7 +69,7 @@ SDK capabilities:
 - Query: `page.locator`, `page.querySelector`, `page.querySelectorAll`, `page.find`, `page.$$eval`, `page.contains`, `page.waitForSelector`, `locator.querySelector`, `locator.querySelectorAll`, `locator.$$eval`, `locator.all`, `locator.map`, `locator.find`, `locator.closest`, `locator.text`, `locator.count`, `locator.exists`, `locator.attribute`, `locator.checked`, `handle.querySelector`, `handle.querySelectorAll`, `handle.$$eval`.
 - Container actions: `locator.scrollBy`, `locator.scrollToChild`, `locator.clickChild`.
 - Network: `page.intercept`, `page.waitForRequest`, `page.waitForResponse`, `page.waitForGraphql`, `page.setRequestInterception`, `page.on('request')`.
-- Data: `page.html`, `page.data`, `page.screenshot`, `page.frames`, `page.iframes`, `page.request`, `page.graphql`, `page.localStorage`, `page.evaluate` for non-DOM escape hatches.
+- Data: `page.html`, `page.data`, `page.screenshot`, `page.frames`, `page.iframes`, `page.request`, `page.request.fetch`, `page.graphql`, `page.localStorage`, `page.evaluate` for non-DOM escape hatches.
 - Diff: `page.compare(otherPage)` and `page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`.
 
 Output rules:
