@@ -29,6 +29,7 @@ Global options:
 Help:
   puppet configure    Stores the extension URL in ~/.puppet/config.json.
   Default API output is compact. Large full JSON is written to ~/.puppet/artifacts; pass "raw":true only when necessary.
+  Prefer SDK selector helpers such as page.find, page.$$eval, locator.$$eval, and locator.clickChild before page.evaluate for DOM work.
   puppet help detail  Lists all APIs, CLI usage, helper functions, and return shapes.
   puppet help md      Prints the current README.md integration guide.
   puppet help COMMAND Prints focused examples for pages, run, compare, or server.`;
@@ -70,7 +71,9 @@ Sample script:
   if (!state.browser) throw new Error('Puppet not ready: ' + state.status);
   const page = await state.browser.newPage('https://example.com');
   await page.waitForSelector('body');
-  return await page.evaluate(() => ({ title: document.title, url: location.href }));`;
+  const link = await page.find('a', (node) => Boolean(node.href));
+  const [body] = await page.locator('body').map((node) => ({ title: document.title, text: node.innerText.slice(0, 200) }));
+  return { ...body, hasLink: Boolean(link) };`;
 
 const compare = `Puppet compare and inspect
 

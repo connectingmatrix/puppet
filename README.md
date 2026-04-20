@@ -49,12 +49,13 @@ Use this pattern for Codex work:
 const state = await server.start({ port: 4017 });
 if (!state.browser) throw new Error(`Puppet not ready: ${state.status}`);
 const page = await state.browser.newPage('http://localhost:5173/u');
-return await page.evaluate(() => ({
+const app = await page.querySelector('#app');
+const [body] = await page.locator('body').map((node) => ({
   title: document.title,
   url: location.href,
-  ready: Boolean(document.querySelector('#app')),
-  text: document.body.innerText.slice(0, 500)
+  text: node.innerText.slice(0, 500)
 }));
+return { ...body, ready: Boolean(app) };
 ```
 
 Snapshot output is hard disabled in Puppet. Avoid returning full `body` HTML, base64 screenshots, or all-size compare output directly into Codex. If you need the full payload for offline inspection, pass `"raw": true` or read `artifact.path` outside the chat context.
@@ -108,15 +109,27 @@ await page.keyboard.press('/');
 await page.locator('::-p-aria(Search)').fill('automate beyond recorder');
 await page.locator('.devsite-result-item-link').click({ waitUntil: 'networkidle2' });
 const titleHandle = await page.locator('::-p-text(Customize and automate)').waitHandle();
-const title = await titleHandle.evaluate((node) => node.textContent);
+const title = await titleHandle.text();
 page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
-await page.evaluate(() => console.log(`url is ${location.href}`));
+await page.$$eval('body', () => console.log(`url is ${location.href}`));
 await browser.close();
 ```
 
 ### More SDK patterns
 
 ```js
+const jobs = await page.$$eval('[data-test="JobTile"]', (cards) => cards.map((card) => ({
+  title: (card.querySelector('h2, h3, a[href*="/jobs/"]') || {}).textContent || '',
+  url: ((card.querySelector('a[href*="/jobs/"]') || {}).href || '').trim()
+})));
+const links = await page.querySelectorAll('a[href]');
+const bodyText = await page.locator('body').map((node) => node.innerText.slice(0, 500));
+const panel = page.locator('.job-details-content');
+const titles = await panel.$$eval('a[href*="/jobs/"]', (nodes) => nodes.map((node) => node.textContent.trim()));
+const match = await page.find('a[href*="/jobs/"]', (node, index, nodes, jobId) => node.href.includes(jobId), '~012345');
+if (match) await match.click();
+await panel.clickChild('[data-cy="jobs-in-progress-button"]', { maxScrolls: 25, stepRatio: 0.85 });
+
 await page.setRequestInterception(true);
 page.on('request', async (request) => {
   if (request.isInterceptResolutionHandled()) return;
@@ -154,6 +167,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await browser.sessionPages()` returns all bindable Chrome pages, including tabs not opened by Puppet
 - `await browser.close()` closes tabs opened by the current Puppet session and releases debugger bindings for other bound tabs; `await browser.close({ keepPagesOpen: true })` leaves everything open
 - `await page.goto(url, options?)`
+- `await page.back({ waitForSelector? })`
 - `await page.reload(options?)`
 - `await page.setViewport({ width, height })`
 - `await page.setRequestInterception(true | false)`
@@ -163,6 +177,10 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.waitForResponse(match, options?)`
 - `await page.waitForGraphql(aliasOrOperationName, options?)`
 - `page.locator(selector)`
+- `await page.querySelector(selector, options?)`
+- `await page.querySelectorAll(selector, options?)`
+- `await page.$$eval(selector, nodes => serializableValue)`
+- `await page.find(selector, (node, index, nodes, ...args) => boolean, ...args)`
 - `await page.contains(text)` and `await page.contains(selector, text)`
 - `await page.waitForSelector(selector, options?)`
 - `await page.click(selector, options?)`
@@ -174,7 +192,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.dragAndDrop(sourceSelector, targetSelector, options?)`
 - `await page.scroll(options?)`
 - `await page.submit(selector, options?)`
-- `await page.evaluate(scriptOrFunction, ...args)`
+- `await page.evaluate(scriptOrFunction, ...args)` for browser globals and non-DOM escape hatches
 - `await page.request({ method, url, headers, body, auth })`
 - `await page.graphql(query, { variables, url, auth })`
 - `await page.localStorage.get/set/remove/all()`
@@ -187,6 +205,12 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.iframes()`
 - `page.frame(frameId)` and `page.iframe[frameId]`
 - `await page.close()`
+- `await locator.all()` returns element handles for every match
+- `await locator.map((node, index, nodes) => serializableValue)` extracts all matching nodes in one call
+- `await locator.querySelector(selector)`, `await locator.querySelectorAll(selector)`, and `await locator.$$eval(selector, fn, ...args)` scope queries to a matched root
+- `await locator.find(selector, predicate, ...args)` returns the first matching descendant handle or `null`; `await locator.find(selector)` keeps the existing first-child behavior
+- `await locator.scrollBy({ x, y })`, `await locator.scrollToChild(selector, options?)`, and `await locator.clickChild(selector, options?)` manipulate scrollable containers without raw `page.evaluate()`
+- `await handle.querySelector(selector)`, `await handle.querySelectorAll(selector)`, and `await handle.$$eval(selector, fn, ...args)` scope queries to a handle
 
 ## REST Routes
 
@@ -378,7 +402,7 @@ console.log(accessToken, payload.data, response.status);
   raw: `{ "type": "record_start", "pageId": "PAGE_ID", "recordId": "header", "selector": ".header", "include": ["classes", "styles", "tree"] }`
 - `record_stop`: `await page.run([{ type: 'record_stop', pageId: page.pageId, recordId: 'header' }])`
   raw: `{ "type": "record_stop", "pageId": "PAGE_ID", "recordId": "header" }`
-- `execute_script`: `await page.evaluate(() => ({ href: location.href, title: document.title }))`
+- `execute_script`: `await page.evaluate(() => ({ href: location.href, title: document.title }))` for non-DOM escape hatches
   raw: `{ "type": "execute_script", "pageId": "PAGE_ID", "script": "return { href: location.href, title: document.title };" }`
 - `upload_files`: `await page.waitForSelector('#file-input').then((handle) => handle.uploadFile(['/absolute/path/file.txt']))`
   raw: `{ "type": "upload_files", "pageId": "PAGE_ID", "selector": "#file-input", "files": ["/absolute/path/file.txt"] }`
@@ -393,7 +417,7 @@ Supported selector syntax:
 ```json
 {
   "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "load" }],
-  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.evaluate(() => ({ value: (document.querySelector('#search') || {}).value || '', options: [...document.querySelectorAll('[role=option]')].length }));",
+  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.$$eval('body', () => ({ value: (document.querySelector('#search') || {}).value || '', options: document.querySelectorAll('[role=option]').length }));",
   "closeOnExit": true
 }
 ```

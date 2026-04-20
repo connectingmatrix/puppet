@@ -43,7 +43,9 @@ Preferred CLI workflows:
 - Print full integration docs only when needed: `puppet help md`
 
 Token budget rules:
-- Prefer `page.evaluate()` for targeted facts and return a small object.
+- Prefer `page.querySelector`, `page.querySelectorAll`, `page.find`, `page.$$eval`, `locator` scoped queries, `locator.all`, and `locator.map` for DOM extraction.
+- Prefer `locator.scrollBy`, `locator.scrollToChild`, and `locator.clickChild` for scrollable panels and nested click targets.
+- Use `page.evaluate()` only for browser globals, app state such as `window.__NUXT__`, or other non-DOM escape hatches.
 - Snapshot output is hard disabled in Puppet. Do not pass `snapshot:true`; it is ignored.
 - Do not return full HTML, base64 screenshots, or broad compare payloads into Codex unless the user explicitly needs them.
 - REST and CLI responses compact large output into `{ compact:true, summary, artifact }`; read `artifact.path` from disk instead of pasting the full payload into chat.
@@ -62,11 +64,12 @@ Script scope for `puppet run` and `puppet exec`:
 - For anti-bot sensitive sites, use `server.start({ keepPagesOpen: true })` and `browser.close({ keepPagesOpen: true })` so the SDK disconnects without closing tabs.
 
 SDK capabilities:
-- Navigation: `page.goto`, `page.reload`, `page.setViewport`, `page.url`, `page.location`.
+- Navigation: `page.goto`, `page.back`, `page.reload`, `page.setViewport`, `page.url`, `page.location`.
 - Input: `page.click`, `page.dblclick`, `page.hover`, `page.type`, `page.keyboard.press`, `page.select`, `page.dragAndDrop`, `page.scroll`, `page.submit`.
-- Query: `page.locator`, `page.contains`, `page.waitForSelector`, `locator.find`, `locator.closest`, `locator.text`, `locator.count`, `locator.exists`, `locator.attribute`, `locator.checked`.
+- Query: `page.locator`, `page.querySelector`, `page.querySelectorAll`, `page.find`, `page.$$eval`, `page.contains`, `page.waitForSelector`, `locator.querySelector`, `locator.querySelectorAll`, `locator.$$eval`, `locator.all`, `locator.map`, `locator.find`, `locator.closest`, `locator.text`, `locator.count`, `locator.exists`, `locator.attribute`, `locator.checked`, `handle.querySelector`, `handle.querySelectorAll`, `handle.$$eval`.
+- Container actions: `locator.scrollBy`, `locator.scrollToChild`, `locator.clickChild`.
 - Network: `page.intercept`, `page.waitForRequest`, `page.waitForResponse`, `page.waitForGraphql`, `page.setRequestInterception`, `page.on('request')`.
-- Data: `page.evaluate`, `page.html`, `page.data`, `page.screenshot`, `page.frames`, `page.iframes`, `page.request`, `page.graphql`, `page.localStorage`.
+- Data: `page.html`, `page.data`, `page.screenshot`, `page.frames`, `page.iframes`, `page.request`, `page.graphql`, `page.localStorage`, `page.evaluate` for non-DOM escape hatches.
 - Diff: `page.compare(otherPage)` and `page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`.
 
 Output rules:

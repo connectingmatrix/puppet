@@ -13,7 +13,10 @@ export class ElementHandle {
     fill(value, options = {}) { return this.locator.fill(value, options); }
     press(key, options = {}) { return this.locator.press(key, options); }
     evaluate(script, ...args) { return this.page.evaluate(readScript(script), this.locator.selector, this.locator.index || 0, ...args); }
-    async find(selector) { const path = await readNodePath(this.page, 'find', selector, '', 0, this.locator.selector, this.locator.index || 0); if (!path) throw new Error(`No element matches ${selector}.`); return this.page.locator(path).waitHandle({ visible: false }); }
+    querySelector(selector, options = {}) { return this.locator.querySelector(selector, options); }
+    querySelectorAll(selector, options = {}) { return this.locator.querySelectorAll(selector, options); }
+    $$eval(selector, script, ...args) { return this.locator.$$eval(selector, script, ...args); }
+    find(selector, script, ...args) { return this.locator.find(selector, script, ...args); }
     async closest(selector) { const path = await readNodePath(this.page, 'closest', selector, '', 0, this.locator.selector, this.locator.index || 0); if (!path) throw new Error(`No ancestor matches ${selector}.`); return this.page.locator(path).waitHandle({ visible: false }); }
     text() { return this.evaluate((node) => (node.textContent || '').replace(/\s+/g, ' ').trim()); }
     attribute(name) { return this.evaluate((node, value) => node.getAttribute(value) || '', name); }

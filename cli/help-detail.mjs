@@ -63,13 +63,17 @@ SDK browser helpers and returns:
   browser.close() -> closes current-session Puppet tabs, releases other debugger bindings, and clears live socket state. browser.close({ keepPagesOpen:true }) leaves tabs open.
 
 SDK page helpers and returns:
-  page.goto(url, options?), page.reload(options?), page.setViewport(size) -> public page metadata.
+  page.goto(url, options?), page.back(options?), page.reload(options?), page.setViewport(size) -> public page metadata.
   page.waitForSelector(selector, options?) -> ElementHandle.
   page.locator(selector) -> Locator.
+  page.querySelector(selector, options?) -> ElementHandle or null.
+  page.querySelectorAll(selector, options?) -> ElementHandle[].
+  page.$$eval(selector, fn, ...args) -> serializable bulk DOM extraction.
+  page.find(selector, predicate, ...args) -> ElementHandle or null.
   page.contains(text) or page.contains(selector, text) -> ElementHandle.
   page.click/type/select/scroll/submit/hover/dblclick/dragAndDrop -> action result data.
   page.keyboard.press(key) -> { key }.
-  page.evaluate(fnOrScript, ...args) -> serializable page-context result.
+  page.evaluate(fnOrScript, ...args) -> escape hatch for browser globals and non-DOM page context.
   page.html(selector?) -> { ok, pageId, html, selector, url }.
   page.data(selector, { compact }) -> selector detail. Snapshot output is hard disabled.
   page.screenshot({ path?, selector?, current? }) -> writes path when supplied and omits base64 from the returned object unless raw:true is passed.
@@ -81,9 +85,14 @@ SDK page helpers and returns:
 
 Locator and handle helpers:
   locator.click/fill/press/wait/waitHandle/html/data/screenshot/uploadFile -> page action or capture result.
-  locator.find(selector) -> nested Locator. locator.closest(selector) -> ElementHandle.
+  locator.find(selector) -> nested ElementHandle. locator.find(selector, predicate, ...args) -> ElementHandle or null.
+  locator.closest(selector) -> ElementHandle. locator.all() -> ElementHandle[].
+  locator.querySelector/querySelectorAll/$$eval -> descendants scoped to the locator root.
+  locator.map(fn, ...args) -> serializable per-node DOM extraction.
+  locator.scrollBy({x,y}), locator.scrollToChild(selector), locator.clickChild(selector) -> container scroll/click helpers.
   locator.text() -> string. locator.count() -> number. locator.exists() -> boolean.
   locator.attribute(name) -> string. locator.outerHeight() -> number. locator.checked() -> boolean.
+  handle.querySelector/querySelectorAll/$$eval -> descendants scoped to the handle root.
   handle.evaluate(fn) -> serializable element result. handle.click() -> action result. handle.uploadFile(files) -> upload result.
 
 Network helpers:
@@ -97,7 +106,7 @@ Output rules:
   Use puppet compare routes for broad old-vs-current UI route checks. It returns per-route body/count/style summary keys and writes full details to artifactPath.
   Large REST/CLI payloads return { compact:true, summary, artifact }. Read artifact.path only when a full payload is truly needed.
   SDK helpers request raw data internally so scripts can inspect data; /api/pages/run compacts the final returned value by default.
-  Prefer page.evaluate() for targeted facts. Avoid full HTML, screenshots, and all-size compare unless necessary.
+  Prefer page.querySelector/querySelectorAll/find, page.$$eval, locator scoped queries, locator.all/map, and locator child action helpers for DOM work; keep page.evaluate() for browser globals and non-DOM escape hatches.
   classes, diff.classes_diff, diff.styles_diff, tree styles, and tree diff styles are key-value objects.
   snapshot is always omitted because snapshot output is hard disabled.
   runs are keyed by viewport, for example runs["1024x700"].`;

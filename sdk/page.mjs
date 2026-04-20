@@ -1,9 +1,10 @@
 import { requestJson } from './http.mjs';
 import { Locator } from './locator.mjs';
+import { ElementHandle } from './handle.mjs';
 import { runAction, runActions } from './action.mjs';
 import { ConsoleMessage, RequestHandle } from './event.mjs';
 import { saveBase64 } from './file.mjs';
-import { readNodePath } from './query.mjs';
+import { readNodeItems, readNodeMatch, readNodePath, readNodeValue } from './query.mjs';
 import { runPageGraphql, runPageRequest, LocalStorageStore } from './request.mjs';
 
 class Keyboard { constructor(page) { this.page = page; } press(key, options = {}) { return runAction(this.page, { ...options, key, type: 'send_key' }); } }
@@ -18,6 +19,10 @@ export class Page {
     run(actions) { return runActions(this, actions); }
     on(name, handler) { return this.browser.listen(name, this.pageId, (event) => handler(readEvent(this, name, event))); }
     locator(selector, index = 0) { return new Locator(this, selector, index); }
+    async querySelector(selector, options = {}) { const index = options.index || 0; return await readNodeValue(this, 'exists', selector, '', index) ? new ElementHandle(this.locator(selector, index)) : null; }
+    async querySelectorAll(selector, options = {}) { const count = await readNodeValue(this, 'count', selector, '', 0); const items = []; for (let index = options.start || 0; index < count; index += 1) items.push(new ElementHandle(this.locator(selector, index))); return items; }
+    $$eval(selector, script, ...args) { return readNodeItems(this, selector, script, args, '', 0, true); }
+    async find(selector, script, ...args) { const path = await readNodeMatch(this, selector, script, args); return path ? new ElementHandle(this.locator(path)) : null; }
     async contains(selector, text, options = {}) {
         const value = arguments.length < 2 ? selector : text;
         const query = arguments.length < 2 ? '' : selector;
@@ -31,6 +36,7 @@ export class Page {
     waitForGraphql(match, options = {}) { return this.waitForResponse(match, options); }
     intercept(match = {}, options = {}) { return this.browser.network.intercept(this, match, options); }
     goto(url, options = {}) { return runAction(this, { ...options, type: 'navigate_to_url', url }); }
+    async back(options = {}) { const state = await this.evaluate(() => { history.back(); return { href: location.href }; }); if (options.waitForSelector) await this.waitForSelector(options.waitForSelector, options); return state; }
     reload(options = {}) { return runAction(this, { ...options, type: 'reload_page' }); }
     setViewport(size) { return runAction(this, { height: size.height, type: 'change_screen_size', width: size.width }); }
     setRequestInterception(enabled) { return runAction(this, { enabled, type: 'set_request_interception' }); }
