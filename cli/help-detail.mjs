@@ -71,7 +71,7 @@ SDK page helpers and returns:
   page.$$eval(selector, fn, ...args) -> serializable bulk DOM extraction.
   page.find(selector, predicate, ...args) -> ElementHandle or null.
   page.contains(text) or page.contains(selector, text) -> ElementHandle.
-  page.click/type/select/scroll/submit/hover/dblclick/dragAndDrop -> action result data.
+  page.click/type/select/scroll/MouseScroll/submit/hover/dblclick/dragAndDrop -> action result data.
   page.keyboard.press(key) -> { key }.
   page.evaluate(fnOrScript, ...args) -> escape hatch for browser globals and non-DOM page context.
   page.html(selector?) -> { ok, pageId, html, selector, url }.

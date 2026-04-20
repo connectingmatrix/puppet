@@ -52,8 +52,10 @@ export const runUserAction = async (tabId: number, action: PageAction) => {
     }
     if (action.type === 'scroll') {
         const tab = await chrome.tabs.get(tabId);
-        const target = action.selector ? await readTarget(tabId, action) : { x: (tab.width || 1200) / 2, y: (tab.height || 800) / 2 };
-        await scrollPoint(tabId, target.x || 0, target.y || 0, action.deltaX || action.x || 0, action.deltaY || action.y || 0);
+        const x = action.x || action.x === 0 ? action.x : (tab.width || 1200) / 2;
+        const y = action.y || action.y === 0 ? action.y : (tab.height || 800) / 2;
+        const target = action.selector ? await readTarget(tabId, action) : { x, y };
+        await scrollPoint(tabId, target.x || 0, target.y || 0, action.deltaX || 0, action.deltaY || 0);
         return target;
     }
     if (action.type === 'select_option') {

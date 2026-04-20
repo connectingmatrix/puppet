@@ -47,6 +47,7 @@ export class Page {
     select(selector, value, options = {}) { return runAction(this, { ...options, selector, type: 'select_option', value }); }
     dragAndDrop(sourceSelector, targetSelector, options = {}) { return runAction(this, { ...options, sourceSelector, targetSelector, type: 'drag_drop' }); }
     scroll(options = {}) { return runAction(this, { ...options, type: 'scroll' }); }
+    MouseScroll(x = 0, y = 0, options = {}) { return runAction(this, { ...options, deltaX: options.deltaX || 0, deltaY: options.deltaY || options.deltaY === 0 ? options.deltaY : 900, type: 'scroll', x, y }); }
     submit(selector, options = {}) { return runAction(this, { ...options, selector, type: 'submit' }); }
     evaluate(script, ...args) { return runAction(this, { args, script: readScript(script), type: 'execute_script' }); }
     request(options = {}) { return runPageRequest(this, options); }

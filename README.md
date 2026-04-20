@@ -191,6 +191,7 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.select(selector, value, options?)`
 - `await page.dragAndDrop(sourceSelector, targetSelector, options?)`
 - `await page.scroll(options?)`
+- `await page.MouseScroll(x, y, { deltaY? })` dispatches a Chrome debugger wheel event at the page point
 - `await page.submit(selector, options?)`
 - `await page.evaluate(scriptOrFunction, ...args)` for browser globals and non-DOM escape hatches
 - `await page.request({ method, url, headers, body, auth })`
@@ -374,6 +375,8 @@ console.log(accessToken, payload.data, response.status);
   raw: `{ "type": "drag_drop", "pageId": "PAGE_ID", "sourceSelector": ".card", "targetSelector": "#target" }`
 - `scroll`: `await page.scroll({ deltaY: 900 })`
   raw: `{ "type": "scroll", "pageId": "PAGE_ID", "deltaY": 900 }`
+- mouse point scroll: `await page.MouseScroll(600, 420, { deltaY: 900 })`
+  raw: `{ "type": "scroll", "pageId": "PAGE_ID", "x": 600, "y": 420, "deltaY": 900 }`
 - `submit`: `await page.submit('#demo-form')`
   raw: `{ "type": "submit", "pageId": "PAGE_ID", "selector": "#demo-form" }`
 - `wait_for_selector`: `await page.waitForSelector('#ready', { timeoutMs: 30000 })`

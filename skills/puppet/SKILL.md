@@ -65,7 +65,7 @@ Script scope for `puppet run` and `puppet exec`:
 
 SDK capabilities:
 - Navigation: `page.goto`, `page.back`, `page.reload`, `page.setViewport`, `page.url`, `page.location`.
-- Input: `page.click`, `page.dblclick`, `page.hover`, `page.type`, `page.keyboard.press`, `page.select`, `page.dragAndDrop`, `page.scroll`, `page.submit`.
+- Input: `page.click`, `page.dblclick`, `page.hover`, `page.type`, `page.keyboard.press`, `page.select`, `page.dragAndDrop`, `page.scroll`, `page.MouseScroll`, `page.submit`.
 - Query: `page.locator`, `page.querySelector`, `page.querySelectorAll`, `page.find`, `page.$$eval`, `page.contains`, `page.waitForSelector`, `locator.querySelector`, `locator.querySelectorAll`, `locator.$$eval`, `locator.all`, `locator.map`, `locator.find`, `locator.closest`, `locator.text`, `locator.count`, `locator.exists`, `locator.attribute`, `locator.checked`, `handle.querySelector`, `handle.querySelectorAll`, `handle.$$eval`.
 - Container actions: `locator.scrollBy`, `locator.scrollToChild`, `locator.clickChild`.
 - Network: `page.intercept`, `page.waitForRequest`, `page.waitForResponse`, `page.waitForGraphql`, `page.setRequestInterception`, `page.on('request')`.
