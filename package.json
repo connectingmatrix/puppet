@@ -36,6 +36,7 @@
     "build:bundle": "vite build",
     "dev": "vite build --watch",
     "build:crx": "node scripts/build-crx.mjs",
+    "prepare": "node scripts/prepare-git-install.mjs",
     "server": "node server/index.mjs",
     "open:extension": "node scripts/open-extension.mjs",
     "test:google": "node examples/google-suite.mjs",
