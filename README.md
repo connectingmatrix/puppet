@@ -5,7 +5,7 @@ Puppet is a Chrome extension plus local server for trusted browser control, live
 ## Quick Start
 
 1. Local install: `npm install -g /Users/abeer/dev/chrome_extension_utils`
-2. GitHub install on another machine: `npm install -g git+https://github.com/connectingmatrix/puppet.git`
+2. GitHub install on another machine: `npm install -g https://github.com/connectingmatrix/puppet/archive/refs/heads/main.tar.gz`
 3. `puppet server start --port 4017`
 4. Load `/Users/abeer/dev/chrome_extension_utils/dist` as an unpacked Chrome extension once
 5. Keep Chrome running; the extension background worker connects to the default `4017` server without opening an extension tab
