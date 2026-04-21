@@ -7,6 +7,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const readPort = (baseUrl, options = {}) => `${options.port || new URL(baseUrl).port || '4017'}`;
 const readResult = (baseUrl, port, state) => {
     const item = { baseUrl, browser: state.status === 'connected' ? browser : null, extensionUrl: state.extensionUrl, instanceId: state.instanceId, port, status: state.status };
+    browser.setInstanceId(state.instanceId || '');
     globalThis.browser = item.browser;
     return item;
 };

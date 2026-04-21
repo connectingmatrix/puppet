@@ -85,6 +85,7 @@ export const runLiveAction = async (action: PageAction, emit: LiveEmit) => {
     }
     if (action.type === 'reload_page') {
         const page = updatePageStatus(action.pageId || '', 'reloading');
+        if (action.resetViewport) await clearViewport(page.pageId ? page.tabId || 0 : 0);
         await reloadPageTab(page.pageId ? page.tabId || 0 : 0, action.waitUntil || 'load');
         const next = await refreshPageMeta(action.pageId || '');
         emit('page.reloaded', readPublicPage(next), next.sessionId);

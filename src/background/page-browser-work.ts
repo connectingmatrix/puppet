@@ -15,7 +15,12 @@ const readPageTargets = async () => {
 const bindTab = async (instanceId: string, tab: chrome.tabs.Tab) => {
     const tabId = tab.id || 0;
     const current = readTabPage(tabId);
-    const stats = await readPageStats(tabId);
+    let stats = { cpu: 0, heapUsage: 0, ram: 0 };
+    try {
+        stats = await readPageStats(tabId);
+    } catch {
+        return null;
+    }
     const values = { active: Boolean(tab.active), height: tab.height || 0, index: tab.index || 0, instanceId, pageName: tab.title || '', pageStats: stats, pageUrl: tab.url || '', status: 'ready', tabId, title: tab.title || '', url: tab.url || '', width: tab.width || 0, windowId: tab.windowId || 0 };
     if (current) return readPublicPage(saveTabPage(tabId, values) as LivePage);
     const page = saveLivePage({ ...values, pageId: crypto.randomUUID(), recordingIds: [], role: 'browser', sessionId: '' } as LivePage);

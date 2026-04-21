@@ -27,6 +27,10 @@ const send = (message: RemoteMessage) => {
     socket.send(JSON.stringify(message));
 };
 const emit = (name: string, data: Record<string, unknown>, sessionId = '') => send({ data, name, sessionId, type: 'live.event' });
+const sendProgress = (message: RemoteMessage, state: string) => send({ jobId: message.jobId, progress: `${state} ${message.kind || 'inspect-selector'}.`, type: 'job.progress' });
+const touchQueuedJobs = () => {
+    for (const job of jobs) sendProgress(job, 'Queued');
+};
 const resetQueue = () => {
     jobs.length = 0;
     busy = false;
@@ -49,9 +53,9 @@ const runNext = async () => {
     if (!message) return;
     const token = socketToken;
     busy = true;
-    const progress = setInterval(() => send({ jobId: message.jobId, progress: `Working on ${message.kind || 'inspect-selector'}.`, type: 'job.progress' }), 5000);
+    const progress = setInterval(() => { sendProgress(message, 'Working on'); touchQueuedJobs(); }, 5000);
     try {
-        send({ jobId: message.jobId, progress: `Started ${message.kind || 'inspect-selector'}.`, type: 'job.progress' });
+        sendProgress(message, 'Started');
         const result = await runWithLimit(runRemoteJob({ id: message.jobId || '', kind: message.kind || 'inspect-selector', payload: message.payload || {}, timeoutMs: message.timeoutMs }, instanceId, emit), Number(message.timeoutMs) || 45000, `${message.kind || 'remote'} job`);
         if (token === socketToken) send({ jobId: message.jobId, result, type: 'job.result' });
     } catch (error) {
@@ -101,6 +105,7 @@ const connect = async () => {
             if (message.type === 'job.dispatch') {
                 jobs.push(message);
                 addRemoteWorkerEvent(`Job ${message.kind || 'inspect-selector'} queued.`, 'warn');
+                sendProgress(message, 'Queued');
                 void runNext();
             }
         };

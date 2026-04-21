@@ -73,6 +73,7 @@ export const ensureNetworkEvents = () => {
         const requestBody = `${item.body || ''}`;
         emitLive('network.response', {
             body: readPreview(body),
+            bodyText: body,
             bodyBytes: body.length,
             errorText: `${params.errorText || ''}`,
             headers: item.responseHeaders || {},
@@ -80,6 +81,7 @@ export const ensureNetworkEvents = () => {
             operationName: `${item.operationName || ''}`,
             pageId: `${item.pageId || ''}`,
             requestBody: readPreview(requestBody),
+            requestBodyText: requestBody,
             requestBodyBytes: Number(item.bodyBytes || requestBody.length),
             requestHeaders: item.headers || {},
             requestId: `${item.requestId || ''}`,

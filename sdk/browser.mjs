@@ -10,6 +10,7 @@ export class Browser {
         this.listeners = [];
         this.keepPagesOpen = false;
         this.network = new NetworkStore(this);
+        this.instanceId = '';
         this.sessionId = '';
         this.live.listen('', (event) => {
             for (const item of this.listeners) if ((!item.name || item.name === event.type || item.name === event.name) && (!item.pageId || item.pageId === event.pageId)) item.handler(event);
@@ -23,6 +24,10 @@ export class Browser {
         }
         this.baseUrl = next;
         this.live.baseUrl = this.baseUrl;
+    }
+    setInstanceId(instanceId = '') {
+        this.instanceId = instanceId;
+        return this;
     }
     openLive() {
         this.live.open('');
@@ -48,6 +53,7 @@ export class Browser {
         }
         const data = await requestJson(this.baseUrl, '/api/pages/open', 'POST', {
             pages: [{ height: options.height, role: options.role || `page-${Date.now()}`, url, waitUntil: options.waitUntil || 'load', width: options.width }],
+            instanceId: options.instanceId || this.instanceId || '',
             raw: true,
             sessionId: this.sessionId || '',
             snapshot: false
@@ -58,7 +64,8 @@ export class Browser {
     }
     async pages() {
         this.openLive();
-        const data = await requestJson(this.baseUrl, '/api/pages/browser?raw=1');
+        const instance = this.instanceId ? `&instanceId=${encodeURIComponent(this.instanceId)}` : '';
+        const data = await requestJson(this.baseUrl, `/api/pages/browser?raw=1${instance}`);
         const items = [];
         for (const item of data.items || []) items.push(new Page(this, item));
         return items;
@@ -74,8 +81,12 @@ export class Browser {
         }
         const pages = await this.sessionPages();
         for (const page of pages) {
-            if (this.sessionId && page.sessionId === this.sessionId && page.role !== 'browser') await page.close();
-            else await page.release();
+            try {
+                if (this.sessionId && page.sessionId === this.sessionId && page.role !== 'browser') await page.close();
+                else await page.release();
+            } catch (error) {
+                if (!`${error.message || error}`.includes('No active page matches')) throw error;
+            }
         }
         this.live.close();
         this.sessionId = '';

@@ -11,21 +11,30 @@ export class Locator {
     click(options = {}) { return runAction(this.page, { ...options, index: options.index || this.index || 0, selector: this.selector, type: 'click' }); }
     dblclick(options = {}) { return runAction(this.page, { ...options, clickCount: 2, index: options.index || this.index || 0, selector: this.selector, type: 'click' }); }
     hover(options = {}) { return runAction(this.page, { ...options, index: options.index || this.index || 0, selector: this.selector, type: 'hover' }); }
+    inViewport() {
+        return new ElementHandle(this).evaluate((node) => {
+            const box = node.getBoundingClientRect();
+            const height = window.innerHeight || document.documentElement.clientHeight;
+            const width = window.innerWidth || document.documentElement.clientWidth;
+            const style = getComputedStyle(node);
+            return box.width > 0 && box.height > 0 && box.top >= 0 && box.left >= 0 && box.bottom <= height && box.right <= width && style.display !== 'none' && style.visibility !== 'hidden';
+        });
+    }
     fill(value, options = {}) { return runAction(this.page, { ...options, clearFirst: options.clearFirst || options.clearFirst === false ? options.clearFirst : true, index: options.index || this.index || 0, selector: this.selector, type: 'type_text', value }); }
     press(key, options = {}) { return runAction(this.page, { ...options, index: options.index || this.index || 0, key, selector: this.selector, type: 'send_key' }); }
     wait(options = {}) { return runAction(this.page, { ...options, index: options.index || this.index || 0, selector: this.selector, type: 'wait_for_selector', visible: options.visible || options.visible === false ? options.visible : true }); }
     async waitHandle(options = {}) { await this.wait(options); return new ElementHandle(this); }
-    async all(options = {}) { const count = await this.count(); const items = []; for (let index = options.start || 0; index < count; index += 1) items.push(new ElementHandle({ index, page: this.page, selector: this.selector })); return items; }
+    async all(options = {}) { const count = await this.count(); const items = []; for (let index = options.start || 0; index < count; index += 1) { const path = await readNodePath(this.page, 'path', this.selector, '', index); if (path) items.push(new ElementHandle(this.page.locator(path))); } return items; }
     map(script, ...args) { return readNodeItems(this.page, this.selector, script, args); }
-    async querySelector(selector, options = {}) { const path = await readNodePath(this.page, 'path', selector, '', options.index || 0, this.selector, this.index || 0); return path ? new ElementHandle({ index: 0, page: this.page, selector: path }) : null; }
-    async querySelectorAll(selector, options = {}) { const count = await readNodeValue(this.page, 'count', selector, '', 0, this.selector, this.index || 0); const items = []; for (let index = options.start || 0; index < count; index += 1) { const path = await readNodePath(this.page, 'path', selector, '', index, this.selector, this.index || 0); if (path) items.push(new ElementHandle({ index: 0, page: this.page, selector: path })); } return items; }
+    async querySelector(selector, options = {}) { const path = await readNodePath(this.page, 'path', selector, '', options.index || 0, this.selector, this.index || 0); return path ? new ElementHandle(this.page.locator(path)) : null; }
+    async querySelectorAll(selector, options = {}) { const count = await readNodeValue(this.page, 'count', selector, '', 0, this.selector, this.index || 0); const items = []; for (let index = options.start || 0; index < count; index += 1) { const path = await readNodePath(this.page, 'path', selector, '', index, this.selector, this.index || 0); if (path) items.push(new ElementHandle(this.page.locator(path))); } return items; }
     $$eval(selector, script, ...args) { return readNodeItems(this.page, selector, script, args, this.selector, this.index || 0, true); }
     async find(selector, script, ...args) {
         if (!script) { const path = await readNodePath(this.page, 'find', selector, '', 0, this.selector, this.index || 0); if (!path) throw new Error(`No element matches ${selector}.`); return new ElementHandle({ index: 0, page: this.page, selector: path }); }
         const path = await readNodeMatch(this.page, selector, script, args, this.selector, this.index || 0);
-        return path ? new ElementHandle({ index: 0, page: this.page, selector: path }) : null;
+        return path ? new ElementHandle(this.page.locator(path)) : null;
     }
-    async closest(selector) { const path = await readNodePath(this.page, 'closest', selector, '', 0, this.selector, this.index || 0); if (!path) throw new Error(`No ancestor matches ${selector}.`); return new ElementHandle({ index: 0, page: this.page, selector: path }); }
+    async closest(selector) { const path = await readNodePath(this.page, 'closest', selector, '', 0, this.selector, this.index || 0); if (!path) throw new Error(`No ancestor matches ${selector}.`); return new ElementHandle(this.page.locator(path)); }
     scrollBy(move = {}) { return new ElementHandle(this).evaluate((node, value) => { node.scrollLeft += value.x || 0; node.scrollTop += value.y || 0; return { scrollHeight: node.scrollHeight, scrollLeft: node.scrollLeft, scrollTop: node.scrollTop, scrollWidth: node.scrollWidth }; }, move); }
     scrollToChild(selector, options = {}) {
         return new ElementHandle(this).evaluate((root, query, opts) => {
@@ -47,7 +56,9 @@ export class Locator {
     async clickChild(selector, options = {}) { const state = await this.scrollToChild(selector, options); if (state.visible) { const child = await this.querySelector(selector, options); await child.click({ ...options, index: 0 }); return { ...state, clicked: true }; } return { ...state, clicked: false }; }
     count() { return readNodeValue(this.page, 'count', this.selector, '', this.index || 0); }
     async exists() { return Boolean(await readNodeValue(this.page, 'exists', this.selector, '', this.index || 0)); }
+    box() { return readNodeValue(this.page, 'box', this.selector, '', this.index || 0); }
     text() { return readNodeValue(this.page, 'text', this.selector, '', this.index || 0); }
+    style(name) { return readNodeValue(this.page, 'style', this.selector, name || '', this.index || 0); }
     attribute(name) { return readNodeValue(this.page, 'attribute', this.selector, name || '', this.index || 0); }
     outerHeight() { return readNodeValue(this.page, 'outerHeight', this.selector, '', this.index || 0); }
     async checked() { return Boolean(await readNodeValue(this.page, 'checked', this.selector, '', this.index || 0)); }

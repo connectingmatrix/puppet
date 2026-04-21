@@ -32,13 +32,14 @@
     "README.md"
   ],
   "scripts": {
-    "build": "vite build",
+    "build": "npm run build:bundle && npm run test:sample",
+    "build:bundle": "vite build",
     "dev": "vite build --watch",
     "build:crx": "node scripts/build-crx.mjs",
     "server": "node server/index.mjs",
     "open:extension": "node scripts/open-extension.mjs",
     "test:google": "node examples/google-suite.mjs",
-    "test:sample": "node examples/sample-suite.mjs",
+    "test:sample": "node scripts/run-sample-tests.mjs",
     "ai:init": "./.ai/bin/ai-init",
     "ai:sync": "./.ai/bin/ai-sync",
     "ai:memory:build": "./.ai/bin/ai-memory-build",

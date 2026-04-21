@@ -1,5 +1,5 @@
 const readData = async (page, kind, selector = '', value = '', index = 0, baseSelector = '', baseIndex = 0) => page.evaluate((mode, query, extra, offset, baseQuery, baseOffset) => {
-    const readText = (node) => (node.textContent || '').replace(/\s+/g, ' ').trim();
+    const readText = (node) => (node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim();
     const readName = (node) => (node.getAttribute('aria-label') || node.getAttribute('title') || node.getAttribute('placeholder') || node.value || '').trim() || readText(node);
     const readNodes = (root) => { const items = []; const walker = document.createTreeWalker(root || document.body || document.documentElement, NodeFilter.SHOW_ELEMENT); for (let node = walker.currentNode; node; node = walker.nextNode()) items.push(node); return items; };
     const readList = (target, root = document) => !target.startsWith('::-p-') || !target.endsWith(')') ? Array.from((root || document).querySelectorAll(target || 'body')) : readNodes(root || document.body || document.documentElement).filter((node) => target.startsWith('::-p-text(') ? readText(node).includes(target.slice(target.indexOf('(') + 1, -1).trim()) : readName(node).includes(target.slice(target.indexOf('(') + 1, -1).trim()));
@@ -23,15 +23,21 @@ const readData = async (page, kind, selector = '', value = '', index = 0, baseSe
                 : items[offset || 0] || null;
     if (mode === 'count') return items.length;
     if (mode === 'exists') return Boolean(node);
-    if (!node) return mode.includes('path') || mode === 'contains' || mode === 'find' || mode === 'closest' ? '' : mode === 'checked' ? false : 0;
+    if (!node) return mode.includes('path') || mode === 'contains' || mode === 'find' || mode === 'closest' ? '' : mode === 'checked' ? false : mode === 'box' ? {} : 0;
     if (mode === 'attribute') return node.getAttribute(extra) || '';
     if (mode === 'checked') return Boolean(node.checked);
+    if (mode === 'box') {
+        const box = node.getBoundingClientRect();
+        return { bottom: box.bottom, height: box.height, left: box.left, right: box.right, top: box.top, width: box.width, x: box.x, y: box.y };
+    }
     if (mode === 'outerHeight') return node.getBoundingClientRect().height || node.offsetHeight || 0;
+    if (mode === 'style') return getComputedStyle(node).getPropertyValue(extra) || '';
     if (mode === 'text') return readText(node);
     return readPath(node);
 }, kind, selector, value, index, baseSelector, baseIndex);
 
 const readBulkScript = (script, listMode) => `
+const __name=(fn)=>fn;
 const selector=args[0]||'';
 const baseSelector=args[1]||'';
 const baseIndex=args[2]||0;
@@ -50,6 +56,7 @@ return out;
 `;
 
 const readMatchScript = (script) => `
+const __name=(fn)=>fn;
 const selector=args[0]||'';
 const baseSelector=args[1]||'';
 const baseIndex=args[2]||0;

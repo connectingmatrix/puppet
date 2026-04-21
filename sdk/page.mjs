@@ -9,7 +9,8 @@ import { runPageGraphql, readPageRequestClient, LocalStorageStore } from './requ
 
 class Keyboard { constructor(page) { this.page = page; } press(key, options = {}) { return runAction(this.page, { ...options, key, type: 'send_key' }); } }
 const readEvent = (page, name, event) => name === 'console' ? new ConsoleMessage(event) : name === 'request' ? new RequestHandle(page, event) : event;
-const readScript = (script) => script && script.call && script.apply ? `return (${script.toString()})(...(args||[]));` : `${script || ''}`;
+const functionPrelude = 'const __name=(fn)=>fn;';
+const readScript = (script) => script && script.call && script.apply ? `${functionPrelude}return (${script.toString()})(...(args||[]));` : `${script || ''}`;
 
 export class Page {
     constructor(browser, item, frameId = 0) {
@@ -20,7 +21,7 @@ export class Page {
     on(name, handler) { return this.browser.listen(name, this.pageId, (event) => handler(readEvent(this, name, event))); }
     locator(selector, index = 0) { return new Locator(this, selector, index); }
     async querySelector(selector, options = {}) { const index = options.index || 0; return await readNodeValue(this, 'exists', selector, '', index) ? new ElementHandle(this.locator(selector, index)) : null; }
-    async querySelectorAll(selector, options = {}) { const count = await readNodeValue(this, 'count', selector, '', 0); const items = []; for (let index = options.start || 0; index < count; index += 1) items.push(new ElementHandle(this.locator(selector, index))); return items; }
+    async querySelectorAll(selector, options = {}) { const count = await readNodeValue(this, 'count', selector, '', 0); const items = []; for (let index = options.start || 0; index < count; index += 1) { const path = await readNodePath(this, 'path', selector, '', index); if (path) items.push(new ElementHandle(this.locator(path))); } return items; }
     $$eval(selector, script, ...args) { return readNodeItems(this, selector, script, args, '', 0, true); }
     async find(selector, script, ...args) { const path = await readNodeMatch(this, selector, script, args); return path ? new ElementHandle(this.locator(path)) : null; }
     async contains(selector, text, options = {}) {

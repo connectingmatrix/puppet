@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Click Sample</title>
+  <style>
+    body { min-height: 1800px; padding: 32px; }
+    #scroll-target { margin-top: 1200px; }
+  </style>
+</head>
+<body>
+  <button id="page-click">Page Click</button>
+  <button id="locator-click">Locator Click</button>
+  <div id="out">idle</div>
+  <button id="scroll-target">Scroll Target</button>
+  <script>
+    document.querySelector('#page-click').addEventListener('click', () => { document.querySelector('#out').textContent = 'page-clicked'; });
+    document.querySelector('#locator-click').addEventListener('click', () => { document.querySelector('#out').textContent = 'locator-clicked'; });
+    document.querySelector('#scroll-target').addEventListener('click', () => { document.querySelector('#out').textContent = 'scroll-clicked'; });
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 const instances = new Map();
 const jobs = new Map();
 const eventLimit = 40;
+const minJobTimeoutMs = 240000;
 
 const readNow = () => Date.now();
 const readOpen = (entry) => entry && entry.socket && entry.socket.readyState === 1;
@@ -28,10 +29,11 @@ const rejectJobs = (instanceId, error) => {
         job.reject(new Error(error));
     }
 };
+const readJobTimeout = (value) => Math.max(Number(value) || 45000, minJobTimeoutMs);
 const startTimer = (job) => setTimeout(() => {
     jobs.delete(job.id);
     job.reject(new Error('Timed out waiting for the extension response.'));
-}, job.timeoutMs);
+}, readJobTimeout(job.timeoutMs));
 
 const readTargetInstance = (instanceId = '') => {
     if (instanceId && readOpen(instances.get(instanceId))) return instanceId;
