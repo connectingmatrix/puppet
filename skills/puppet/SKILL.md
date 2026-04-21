@@ -8,7 +8,7 @@ description: Use when you need live page sessions, trusted browser control, scre
 Use the globally installed `puppet` command. Do not call repo-local `npm run server`, curl raw endpoints, or repo-local shell launchers unless the CLI is missing.
 
 Install on another machine:
-- `npm install -g git+ssh://git@github.com/connectingmatrix/puppet.git`
+- `npm install -g git+https://github.com/connectingmatrix/puppet.git`
 
 Start and inspect state:
 - `puppet server start --port 4017`

@@ -6,7 +6,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/connectingmatrix/puppet.git"
+    "url": "git+https://github.com/connectingmatrix/puppet.git"
   },
   "bin": {
     "puppet": "./bin/puppet.mjs"
@@ -32,7 +32,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run build:bundle && npm run test:sample",
+    "build": "npm run build:bundle",
     "build:bundle": "vite build",
     "dev": "vite build --watch",
     "build:crx": "node scripts/build-crx.mjs",
@@ -49,7 +49,7 @@
     "ai:context:build": "./.ai/bin/ai-context-build"
   },
   "dependencies": {
-    "express": "^5.1.0",
+    "express": "4.21.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "ws": "^8.20.0"
