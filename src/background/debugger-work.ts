@@ -1,33 +1,66 @@
 import { ensureDebugEvents } from '@/src/background/debug-live-work';
 import { ensureNetworkEvents } from '@/src/background/network-event-work';
 import { ensureInterceptWork } from '@/src/background/intercept-work';
+import { dropSocketEvents, ensureSocketEvents } from '@/src/background/socket-event-work';
 import { ScreenSize } from '@/src/shared/remote-types';
 import { runWithLimit } from '@/src/shared/time-limit';
 
 const attached = new Set<number>();
 const enabled = new Set<number>();
+const holds = new Map<number, number>();
+const opening = new Map<number, Promise<void>>();
 const version = '1.3';
 const readTarget = (tabId: number) => ({ tabId });
 const runCommand = (tabId: number, method: string, command = {}, timeoutMs = 45000) => runWithLimit(chrome.debugger.sendCommand(readTarget(tabId), method, command), timeoutMs, method);
+const readHold = (tabId: number) => Number(holds.get(tabId) || 0);
+const addHold = (tabId: number) => holds.set(tabId, readHold(tabId) + 1);
+const dropHold = (tabId: number) => {
+    const next = Math.max(readHold(tabId) - 1, 0);
+    if (next) holds.set(tabId, next);
+    else holds.delete(tabId);
+    return next;
+};
 
 export const ensureDebugTab = async (tabId: number) => {
     ensureDebugEvents();
     ensureNetworkEvents();
     ensureInterceptWork();
-    if (!attached.has(tabId)) {
-        await runWithLimit(chrome.debugger.attach(readTarget(tabId), version), 30000, 'debugger attach');
-        attached.add(tabId);
-    }
+    ensureSocketEvents();
     if (enabled.has(tabId)) return;
-    await runCommand(tabId, 'Page.enable');
-    await runCommand(tabId, 'Runtime.enable');
-    await runCommand(tabId, 'Network.enable');
-    enabled.add(tabId);
+    const current = opening.get(tabId);
+    if (current) return current;
+    let next: Promise<void>;
+    next = (async () => {
+        if (!attached.has(tabId)) {
+            await runWithLimit(chrome.debugger.attach(readTarget(tabId), version), 30000, 'debugger attach');
+            attached.add(tabId);
+        }
+        if (enabled.has(tabId)) return;
+        await runCommand(tabId, 'Page.enable');
+        await runCommand(tabId, 'Runtime.enable');
+        await runCommand(tabId, 'Network.enable');
+        enabled.add(tabId);
+    })().finally(() => {
+        if (opening.get(tabId) === next) opening.delete(tabId);
+    });
+    opening.set(tabId, next);
+    return next;
 };
 
 export const sendDebug = async (tabId: number, method: string, command = {}, timeoutMs = 45000) => {
     await ensureDebugTab(tabId);
     return runCommand(tabId, method, command, timeoutMs);
+};
+
+export const startDebugTab = async (tabId: number) => {
+    await ensureDebugTab(tabId);
+    addHold(tabId);
+    return readHold(tabId);
+};
+
+export const stopDebugTab = async (tabId: number) => {
+    if (!attached.has(tabId)) return 0;
+    return dropHold(tabId);
 };
 
 export const resizeViewport = async (tabId: number, size: ScreenSize) => {
@@ -92,10 +125,16 @@ export const readPageStats = async (tabId: number) => {
     return { cpu, heapUsage: heap.usedSize || 0, ram: heap.totalSize || 0 };
 };
 
-export const closeDebugTab = async (tabId: number) => {
+export const closeDebugTab = async (tabId: number, force = false) => {
     if (!attached.has(tabId)) return;
+    const pending = opening.get(tabId);
+    if (pending) await pending.catch(() => {});
+    if (!(force || !readHold(tabId))) return;
     await clearViewport(tabId);
     await runWithLimit(chrome.debugger.detach(readTarget(tabId)), 30000, 'debugger detach');
+    dropSocketEvents(tabId);
     attached.delete(tabId);
     enabled.delete(tabId);
+    holds.delete(tabId);
+    opening.delete(tabId);
 };

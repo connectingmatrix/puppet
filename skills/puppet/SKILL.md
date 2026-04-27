@@ -36,8 +36,7 @@ Preferred CLI workflows:
 - Compare pages: `puppet compare selector --json '{"leftUrl":"https://a.test","rightUrl":"https://b.test","selector":"body"}'`
 - Compare many routes compactly: `puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'`
 - Use the route compare example: `puppet compare routes --file /Users/abeer/dev/chrome_extension_utils/examples/route-compare.json`
-- Run scripts: `puppet run ./script.mjs --timeout-ms 180000`
-- Execute inline scripts: `puppet exec --eval "const state = await server.start({port:4017}); return state.status"`
+- Run modules: `puppet run ./script.mjs --timeout-ms 180000`
 - Configure extension URL: `puppet configure chrome-extension://EXTENSION_ID/sidepanel.html`
 - Print API/helper reference only when needed: `puppet help detail`
 - Print full integration docs only when needed: `puppet help md`
@@ -53,22 +52,27 @@ Token budget rules:
 - For `giga-ai-ui` workflow checks, prefer `examples/giga-workflow-actions.mjs` or its short markdown guide.
 - For broad route regressions, use `puppet compare routes`. It reuses one tab, returns a small summary, and writes the full route artifact to `.tmp`.
 
-Script scope for `puppet run` and `puppet exec`:
-- Script files are server-side function bodies, not standalone Node modules.
-- `server.start({ port })` returns `{ browser, status, port, baseUrl, extensionUrl, instanceId }`.
-- Throw when `browser` is null: `if (!state.browser) throw new Error('Puppet not ready: ' + state.status)`.
-- `browser.pages()` lists all currently open browser tabs the extension can bind.
-- `browser.newPage(url, options)` reuses a controlled tab by default; pass `{ newTab: true }` only for intentional extra tabs.
-- Use `await browser.close()` to close current-session pages opened by Puppet.
-- `browser.close()` releases debugger bindings from bound tabs that it does not close.
-- For anti-bot sensitive sites, use `server.start({ keepPagesOpen: true })` and `browser.close({ keepPagesOpen: true })` so the SDK disconnects without closing tabs.
+Programmatic modules:
+- `puppet run` launches a normal Node module file. Inline eval and injected globals are disabled.
+- Start modules with `import puppet from 'puppet'`.
+- `puppet.start({ port })` returns `{ browser, status, port, baseUrl, extensionUrl, instanceId }`.
+- Throw when `state.browser` is null: `if (!state.browser) throw new Error('Puppet not ready: ' + state.status)`.
+- `state.browser.pages()` lists all currently open browser tabs the extension can bind.
+- `state.browser.newPage(url, options)` reuses a page only inside the current Puppet session; a fresh script opens an isolated Puppet tab by default.
+- Use `state.browser.pages()` or `state.browser.sessionPages()` when you intentionally want to bind an already-open browser tab.
+- Use `await state.browser.close()` to close current-session pages opened by Puppet.
+- `state.browser.close()` does not release shared pages outside the current session.
+- Same-page concurrent work is allowed; callers coordinate final ordering when they intentionally share one page.
+- For anti-bot sensitive sites, use `puppet.start({ keepPagesOpen: true })` and `state.browser.close({ keepPagesOpen: true })` so the SDK disconnects without closing tabs.
 
 SDK capabilities:
 - Navigation: `page.goto`, `page.back`, `page.reload`, `page.setViewport`, `page.url`, `page.location`.
 - Input: `page.click`, `page.dblclick`, `page.hover`, `page.type`, `page.keyboard.press`, `page.select`, `page.dragAndDrop`, `page.scroll`, `page.MouseScroll`, `page.submit`.
 - Query: `page.locator`, `page.querySelector`, `page.querySelectorAll`, `page.find`, `page.$$eval`, `page.contains`, `page.waitForSelector`, `locator.querySelector`, `locator.querySelectorAll`, `locator.$$eval`, `locator.all`, `locator.map`, `locator.find`, `locator.closest`, `locator.text`, `locator.count`, `locator.exists`, `locator.attribute`, `locator.checked`, `handle.querySelector`, `handle.querySelectorAll`, `handle.$$eval`.
 - Container actions: `locator.scrollBy`, `locator.scrollToChild`, `locator.clickChild`.
-- Network: `page.intercept`, `page.waitForRequest`, `page.waitForResponse`, `page.waitForGraphql`, `page.setRequestInterception`, `page.on('request')`.
+- Console: `page.on('console')`, `page.on('pageerror')`, `page.console.read()`, `page.console.on()`, `page.console.write()`, `page.consoleMessages()`, `page.waitForConsole()`.
+- Network: `page.intercept`, `page.waitForRequest`, `page.waitForResponse`, `page.waitForGraphql`, `page.setRequestInterception`, `page.on('request')`, `page.request.on()`, `page.network.requests()`, `page.network.socket()`, `page.socket.on()`.
+- Debugger: `page.debugger.start()` and `page.debugger.stop()` for Chrome debugger-backed testing helpers.
 - Data: `page.html`, `page.data`, `page.screenshot` (compressed JPEG by default), `page.frames`, `page.iframes`, `page.request`, `page.request.fetch`, `page.graphql`, `page.localStorage`, `page.evaluate` for non-DOM escape hatches.
 - Diff: `page.compare(otherPage)` and `page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`.
 

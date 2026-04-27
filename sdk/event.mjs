@@ -1,9 +1,33 @@
 export class ConsoleMessage {
-    constructor(event) {
+    constructor(page, event) {
+        this.pageRef = page;
         this.event = event;
+    }
+    at() {
+        return Number(this.event.at || 0);
+    }
+    args() {
+        const items = [];
+        for (const item of this.event.args || []) items.push(item);
+        return items;
+    }
+    json() {
+        return { ...this.event, args: this.args(), location: this.location() };
+    }
+    location() {
+        return { ...(this.event.location || { columnNumber: 0, lineNumber: 0, url: '' }) };
+    }
+    page() {
+        return this.pageRef;
+    }
+    source() {
+        return this.event.source || 'console';
     }
     text() {
         return this.event.text || '';
+    }
+    type() {
+        return this.event.type || 'log';
     }
 }
 

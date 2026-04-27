@@ -1,17 +1,13 @@
 import { sendDebug } from '@/src/background/debugger-work';
 import { readGraphqlName } from '@/src/background/graphql-name';
 import { emitLive } from '@/src/background/live-event-work';
+import { readPreviewText } from '@/src/background/text-preview';
 import { readTabPage } from '@/src/background/page-store';
 
 const items = new Map<string, Record<string, unknown>>();
 let ready = false;
-const previewLimit = 1200;
 
 const readId = (tabId: number, requestId = '') => `${tabId}:${requestId}`;
-const readPreview = (value = '') => {
-    const text = `${value || ''}`;
-    return text.length > previewLimit ? `${text.slice(0, previewLimit)}...[truncated ${text.length - previewLimit} chars]` : text;
-};
 const readTextBody = async (tabId: number, requestId = '', type = '') => {
     const resource = `${type || ''}`.toLowerCase();
     if (resource && resource !== 'fetch' && resource !== 'xhr' && resource !== 'document') return '';
@@ -32,7 +28,7 @@ const readPayload = (params: Record<string, unknown>, pageId: string) => {
     const request = params.request || {};
     const body = `${request.postData || ''}`;
     return {
-        body: readPreview(body),
+        body: readPreviewText(body),
         bodyBytes: body.length,
         headers: readHeaders(request.headers || {}),
         method: `${request.method || ''}`,
@@ -72,7 +68,7 @@ export const ensureNetworkEvents = () => {
         const body = method === 'Network.loadingFinished' ? await readTextBody(tabId, `${params.requestId || ''}`, `${item.resourceType || ''}`) : '';
         const requestBody = `${item.body || ''}`;
         emitLive('network.response', {
-            body: readPreview(body),
+            body: readPreviewText(body),
             bodyText: body,
             bodyBytes: body.length,
             errorText: `${params.errorText || ''}`,
@@ -80,7 +76,7 @@ export const ensureNetworkEvents = () => {
             method: `${item.method || ''}`,
             operationName: `${item.operationName || ''}`,
             pageId: `${item.pageId || ''}`,
-            requestBody: readPreview(requestBody),
+            requestBody: readPreviewText(requestBody),
             requestBodyText: requestBody,
             requestBodyBytes: Number(item.bodyBytes || requestBody.length),
             requestHeaders: item.headers || {},

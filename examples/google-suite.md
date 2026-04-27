@@ -2,6 +2,12 @@
 
 This suite tests Puppet against `google.com` using the live REST API.
 
+For the parallel ownership and concurrency stress case, run:
+
+```bash
+node /Users/abeer/dev/chrome_extension_utils/examples/google-parallel-suite.mjs
+```
+
 ## 1. Open One Live Page
 
 ```bash

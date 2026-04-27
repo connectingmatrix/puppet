@@ -47,7 +47,8 @@
     "ai:memory:latest": "./.ai/bin/ai-memory-latest",
     "ai:repair": "./.ai/bin/ai-repair",
     "ai:context": "./.ai/bin/ai-context",
-    "ai:context:build": "./.ai/bin/ai-context-build"
+    "ai:context:build": "./.ai/bin/ai-context-build",
+    "ai:doctor": "./.ai/bin/ai-doctor"
   },
   "dependencies": {
     "express": "4.21.2",

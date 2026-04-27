@@ -1,5 +1,6 @@
 import express from 'express';
 import { readCompactResult } from './compact-result.mjs';
+import { listPageEvents } from './page-events.mjs';
 import { readLivePage, savePage } from './live-store.mjs';
 import { runRouteCompare } from './route-compare.mjs';
 import { runScript } from './script-runner.mjs';
@@ -61,8 +62,11 @@ router.post('/compare/selector', (request, response) => runLegacyJob(request, re
 router.post('/inspect/selector', (request, response) => runLegacyJob(request, response, 'inspect-selector', { actions: readActions(request.body.actions), path: request.body.path || 'root', selector: request.body.selector, snapshot: readSnapshotFlag(), url: request.body.url }, request.body));
 router.post('/pages/open', (request, response) => runLiveJob(request, response, 'pages-open', { actions: readActions(request.body.actions), pages: request.body.pages || [], sessionId: request.body.sessionId || crypto.randomUUID(), snapshot: readSnapshotFlag() }, request.body));
 router.post('/pages/actions', (request, response) => runLiveJob(request, response, 'pages-actions', { actions: readActions(request.body.actions) }, request.body));
+router.post('/pages/debugger', (request, response) => runLiveJob(request, response, 'pages-debugger', { action: request.body.action || 'start', pageId: request.body.pageId, script: request.body.script || '' }, request.body));
 router.post('/pages/diff', (request, response) => runLiveJob(request, response, 'pages-diff', { leftPageId: request.body.leftPageId, leftSelector: request.body.leftSelector || request.body.selector, path: request.body.path || 'root', rightPageId: request.body.rightPageId, rightSelector: request.body.rightSelector || request.body.selector, selector: request.body.selector, snapshot: readSnapshotFlag() }, request.body));
 router.post('/pages/data', (request, response) => runLiveJob(request, response, 'pages-data', { pageId: request.body.pageId, path: request.body.path || 'root', selector: request.body.selector, snapshot: readSnapshotFlag() }, request.body));
+router.post('/pages/console', (request, response) => send(request, response, 'pages-console', { items: listPageEvents(request.body.pageId || '', 'console', request.body.limit || 80), ok: true, pageId: request.body.pageId || '' }));
+router.post('/pages/events', (request, response) => send(request, response, 'pages-events', { items: listPageEvents(request.body.pageId || '', request.body.name || '', request.body.limit || 200), name: request.body.name || '', ok: true, pageId: request.body.pageId || '' }));
 router.post('/pages/frames', (request, response) => runLiveJob(request, response, 'pages-frames', { pageId: request.body.pageId }, request.body));
 router.post('/pages/html', (request, response) => runLiveJob(request, response, 'pages-html', { frameId: request.body.frameId || 0, index: request.body.index || 0, pageId: request.body.pageId, selector: request.body.selector || '' }, request.body));
 router.post('/pages/request', (request, response) => runLiveJob(request, response, 'pages-request', { auth: request.body.auth, body: request.body.body, credentials: request.body.credentials, headers: request.body.headers || {}, method: request.body.method || '', pageId: request.body.pageId, url: request.body.url || '' }, request.body));

@@ -14,7 +14,7 @@ Puppet is a Chrome extension plus local server for trusted browser control, live
 8. For another Chrome instance, start a custom server with `puppet server start --port 4021`
 9. Bind custom ports with `puppet extension open --port 4021`
 
-The `puppet` binary is the preferred automation interface. It can start the server, call every REST endpoint, run server-side SDK scripts, and open custom-port extension pages.
+The `puppet` binary is the preferred automation interface. It can start the server, call every REST endpoint, run normal Node modules that import `puppet`, and open custom-port extension pages.
 
 ## CLI First
 
@@ -37,7 +37,7 @@ puppet run ./inspect.mjs --timeout-ms 180000
 puppet api GET /api/health
 ```
 
-Request bodies can come from `--json`, `--file`, or `--stdin`. The raw API escape hatch is `puppet api METHOD /api/path`. Files passed to `puppet run` are server-side function bodies with `server`, `browser`, `args`, and `console` already in scope. Use `puppet help detail` for the API/helper return reference and `puppet help md` to print this README from the installed CLI.
+Request bodies can come from `--json`, `--file`, or `--stdin`. The raw API escape hatch is `puppet api METHOD /api/path`. `puppet run` now launches a normal Node module file. Inline eval and injected `server`/`browser`/`args` globals are disabled. Use `puppet help detail` for the API/helper return reference and `puppet help md` to print this README from the installed CLI.
 
 ## Token-Safe Defaults
 
@@ -46,7 +46,9 @@ Puppet is compact by default for REST and CLI responses. If a response is large,
 Use this pattern for Codex work:
 
 ```js
-const state = await server.start({ port: 4017 });
+import puppet from 'puppet';
+
+const state = await puppet.start({ port: Number(process.env.PUPPET_PORT || 4017) });
 if (!state.browser) throw new Error(`Puppet not ready: ${state.status}`);
 const page = await state.browser.newPage('http://localhost:5173/u');
 const app = await page.querySelector('#app');
@@ -55,7 +57,7 @@ const [body] = await page.locator('body').map((node) => ({
   url: location.href,
   text: node.innerText.slice(0, 500)
 }));
-return { ...body, ready: Boolean(app) };
+console.log(JSON.stringify({ ...body, ready: Boolean(app) }, null, 2));
 ```
 
 Snapshot output is hard disabled in Puppet. Avoid returning full `body` HTML, base64 screenshots, or all-size compare output directly into Codex. If you need the full payload for offline inspection, pass `"raw": true` or read `artifact.path` outside the chat context.
@@ -98,9 +100,9 @@ Optional request keys:
 ## SDK First
 
 ```js
-import server from 'puppet';
+import puppet from 'puppet';
 
-const { browser, status } = await server.start({ port: 4017 });
+const { browser, status } = await puppet.start({ port: Number(process.env.PUPPET_PORT || 4017) });
 if (!browser) throw new Error(`Puppet not ready: ${status}. Reload the installed extension or bind the custom-port extension page.`);
 const page = await browser.newPage();
 await page.goto('https://developer.chrome.com/', { waitUntil: 'load' });
@@ -111,7 +113,16 @@ await page.locator('.devsite-result-item-link').click({ waitUntil: 'networkidle2
 const titleHandle = await page.locator('::-p-text(Customize and automate)').waitHandle();
 const title = await titleHandle.text();
 page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
+page.console.on((msg) => console.log('LIVE CONSOLE:', msg.text()));
+page.socket.on((event) => console.log('SOCKET:', event.kind, event.url || event.preview || ''));
 await page.$$eval('body', () => console.log(`url is ${location.href}`));
+const firstLog = await page.waitForConsole(/url is/);
+await page.debugger.start();
+await page.console.write("console.log('hello from debugger')");
+console.log(firstLog.type(), firstLog.location());
+console.log((await page.consoleMessages()).map((msg) => msg.text()));
+console.log(await page.network.requests({ limit: 10 }));
+console.log(await page.network.socket({ limit: 10 }));
 await browser.close();
 ```
 
@@ -161,17 +172,18 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - use the lamp popup's restart button if the background worker is connected to Chrome but stops responding
 - extension pages opened through `puppet extension open` only save the custom server URL; after the background worker reconnects, the page is not a separate control instance
 - the opener does not create a new extension tab when the target server already has a connected instance
-- `await browser.newPage(url?, options?)` reuses the latest Puppet page by default; if a new script process has no session memory, it binds an existing browser tab first
+- `await browser.newPage(url?, options?)` reuses the latest page in the current Puppet session; a fresh script opens an isolated Puppet tab by default
 - pass `{ newTab: true }` or `{ reuse: false }` to force a new tab
-- `await browser.pages()` returns all open browser tabs bound as Puppet pages
-- `await browser.sessionPages()` returns all bindable Chrome pages, including tabs not opened by Puppet
-- `await browser.close()` closes tabs opened by the current Puppet session and releases debugger bindings for other bound tabs; `await browser.close({ keepPagesOpen: true })` leaves everything open
+- `await browser.pages()` and `await browser.sessionPages()` are the explicit way to bind already-open Chrome tabs
+- `await browser.close()` only closes tabs opened by the current Puppet session; `await browser.close({ keepPagesOpen: true })` leaves everything open
+- same-page concurrent work is allowed by design; callers coordinate final ordering when they intentionally share one page
 - `await page.goto(url, options?)`
 - `await page.back({ waitForSelector? })`
 - `await page.reload(options?)`
 - `await page.setViewport({ width, height })`
 - `await page.setRequestInterception(true | false)`
-- `page.on('console' | 'request' | 'navigation' | 'network.request', handler)`
+- `page.on('console' | 'pageerror' | 'request' | 'navigation' | 'network.request', handler)`
+- `page.debugger.start()` and `page.debugger.stop()` attach or detach Chrome debugger tooling for testing flows
 - `await page.intercept(match, { alias, mode, status, headers, body })`
 - `await page.waitForRequest(match, options?)`
 - `await page.waitForResponse(match, options?)`
@@ -196,10 +208,19 @@ Request callbacks stay live during `page.reload()` and `page.goto()` calls, so `
 - `await page.evaluate(scriptOrFunction, ...args)` for browser globals and non-DOM escape hatches
 - `await page.request({ method, url, headers, body, auth })`
 - `await page.request.fetch(url, { method?, headers?, body?, auth?, credentials? })`
+- `page.request.on(handler)` streams live network requests from Chrome debugger events
+- `await page.network.requests({ limit? })` returns buffered network request events
+- `await page.network.socket({ limit? })` returns buffered websocket events
+- `page.socket.on(handler)` streams live websocket events
 - `await page.graphql(query, { variables, url, auth })`
 - `await page.localStorage.get/set/remove/all()`
 - `await page.html(selector?)`
 - `await page.data(selector, { compact })`; snapshot output is hard disabled
+- `await page.console.read({ limit? })` returns buffered console entries
+- `page.console.on(handler)` binds live page console messages
+- `await page.console.write('console.log(window.location.href)')` runs Chrome debugger `Runtime.evaluate`
+- `await page.consoleMessages({ limit? })` returns buffered browser console entries for the page
+- `await page.waitForConsole(match?, { timeoutMs? })` waits for the next matching console entry
 - `await page.screenshot({ selector, current, path, format, quality, maxWidth, maxHeight })` captures compressed readable JPEG by default; pass `{ format: 'png' }` for lossless output
 - `await page.compare(otherPage, options?)`
 - `await page.compareSelector(selector, otherPage.selectorTree(selector), { compact: true })`
@@ -227,7 +248,6 @@ Live routes:
 - `POST /api/pages/request`
 - `POST /api/pages/frames`
 - `POST /api/pages/screenshot`
-- `POST /api/pages/run`
 - `POST /api/pages/release`
 - `POST /api/pages/close`
 
@@ -418,21 +438,23 @@ Supported selector syntax:
 - `::-p-text(...)`
 - `::-p-aria(...)`
 
-## `/api/pages/run`
+## `puppet run`
 
-```json
-{
-  "pages": [{ "url": "http://127.0.0.1:4017/examples/search.html", "waitUntil": "load" }],
-  "script": "const { browser, status } = await server.start({ port: 4017 }); if (!browser) throw new Error(`Puppet not ready: ${status}`); const page = await browser.newPage('http://127.0.0.1:4017/examples/search.html'); await page.locator('::-p-aria(Search)').fill('gamma'); await page.click(\"[role='option']\", { index: 2 }); return await page.$$eval('body', () => ({ value: (document.querySelector('#search') || {}).value || '', options: document.querySelectorAll('[role=option]').length }));",
-  "closeOnExit": true
-}
+`puppet run` launches a normal Node module file. The module should import `puppet` and manage its own `console.log` output.
+
+```js
+import puppet from 'puppet';
+
+const state = await puppet.start({ port: Number(process.env.PUPPET_PORT || 4017) });
+if (!state.browser) throw new Error(`Puppet not ready: ${state.status}`);
+const page = await state.browser.newPage('http://127.0.0.1:4017/examples/search.html', { waitUntil: 'load' });
+await page.locator('::-p-aria(Search)').fill('gamma');
+await page.click("[role='option']", { index: 2 });
+console.log(JSON.stringify(await page.$$eval('body', () => ({
+  options: document.querySelectorAll('[role=option]').length,
+  value: (document.querySelector('#search') || {}).value || ''
+})), null, 2));
 ```
-
-Response keys:
-- `sessionId`
-- `pageIds`
-- `logs`
-- `result`
 
 ## Output Shape
 
@@ -485,7 +507,7 @@ The Google suite does this:
 - Each Chrome profile broadcasts one stable `browserId`, and a server keeps one active instance per browser id
 - The default `4017` connection is a background-worker instance, so relaunching the server does not require reopening `sidepanel.html`
 - Each registration includes a stable `browserId`, and the server keeps only one connected instance per browser id
-- `browser.newPage()` reuses the latest Puppet-controlled tab by default; across separate Codex script runs it first binds an existing browser tab, then navigates that tab
+- `browser.newPage()` reuses the latest Puppet-controlled tab only inside the current session; across separate script runs it opens an isolated Puppet tab unless you explicitly bind an existing page through `browser.pages()`
 - use `{ newTab: true }` for intentional multi-page comparisons
 - Bound page records are in memory and disappear if the server restarts or the owning extension instance disconnects
 - Custom-port extension pages must stay open while SDK or REST work is running on that custom port

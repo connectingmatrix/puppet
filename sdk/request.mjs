@@ -5,6 +5,7 @@ export const runPageRequest = (page, options = {}) => requestJson(page.baseUrl, 
 export const readPageRequestClient = (page) => {
     const request = (options = {}) => runPageRequest(page, options);
     request.fetch = (url, options = {}) => runPageRequest(page, { ...options, url: url || options.url || '' });
+    request.on = (handler) => page.on('network.request', handler);
     return request;
 };
 

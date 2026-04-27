@@ -12,7 +12,13 @@ if (process.env.PUPPET_TEST_INSTANCE_ID) browser.setInstanceId(process.env.PUPPE
 
 try {
   const click = await browser.newPage(local('click.html'), { waitUntil: 'load' });
+  const seen = [];
+  click.on('console', (event) => seen.push(event.text()));
   assert.equal(await text(click, '#out'), 'idle');
+  await click.evaluate(() => console.log('sample-console'));
+  assert.equal((await click.waitForConsole('sample-console')).text(), 'sample-console');
+  assert.ok((await click.consoleMessages()).find((item) => item.text() === 'sample-console'));
+  assert.ok(seen.includes('sample-console'));
   await click.click('#page-click');
   assert.equal(await text(click, '#out'), 'page-clicked');
   await click.locator('#locator-click').click();
@@ -44,7 +50,7 @@ try {
   const diff = await left.compare(right, { selector: '.card' });
   assert.ok(Object.keys(diff.left.diff.styles_diff || {}).length);
 
-  console.log(JSON.stringify({ ok: true, tests: ['click', 'locator', 'scroll', 'html', 'data', 'search', 'form', 'compare'] }, null, 2));
+  console.log(JSON.stringify({ ok: true, tests: ['console', 'click', 'locator', 'scroll', 'html', 'data', 'search', 'form', 'compare'] }, null, 2));
 } finally {
   await browser.close();
   server.stop();

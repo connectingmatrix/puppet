@@ -12,7 +12,12 @@ const readConnected = (baseUrl, items = []) => {
 
 export const readServerState = async (baseUrl = '') => {
     const url = readBaseUrl(baseUrl);
-    const health = await fetch(`${url}/api/health`);
+    let health = null;
+    try {
+        health = await fetch(`${url}/api/health`);
+    } catch (error) {
+        throw new Error(`Could not reach Puppet server at ${url}. ${error && error.message || 'fetch failed'}`);
+    }
     if (!health.ok) throw new Error(`Puppet is not healthy on ${url}`);
     const response = await fetch(`${url}/api/instances`);
     if (!response.ok) throw new Error(`Could not read Puppet instances on ${url}`);

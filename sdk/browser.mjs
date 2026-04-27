@@ -3,6 +3,12 @@ import { LiveSocket } from './live.mjs';
 import { NetworkStore } from './network.mjs';
 import { Page } from './page.mjs';
 
+const readSessionPages = (items = [], sessionId = '') => {
+    const pages = [];
+    for (const item of items) if (sessionId && item.sessionId === sessionId) pages.push(item);
+    return pages;
+};
+
 export class Browser {
     constructor(baseUrl = '') {
         this.baseUrl = readBaseUrl(baseUrl);
@@ -38,11 +44,9 @@ export class Browser {
         return () => { this.listeners = this.listeners.filter((item) => item.handler !== handler || item.name !== name || item.pageId !== pageId); };
     }
     async newPage(url = 'about:blank', options = {}) {
-        if (!(options.newTab || options.reuse === false)) {
-            const pages = this.sessionId ? await this.sessionPages() : [];
-            const existing = pages[0] || null;
-            const browserPages = existing ? [] : await this.pages();
-            const page = existing || browserPages.find((item) => item.pageUrl === url || item.pageUrl === url.replace(/#.*$/, '')) || browserPages[0] || null;
+        if (!(options.newTab || options.reuse === false) && this.sessionId) {
+            const pages = readSessionPages(await this.pages(), this.sessionId);
+            const page = pages.find((item) => item.pageUrl === url || item.pageUrl === url.replace(/#.*$/, '')) || pages[0] || null;
             if (page) {
                 this.sessionId = page.sessionId || this.sessionId;
                 let next = page;
@@ -79,11 +83,10 @@ export class Browser {
             this.sessionId = '';
             return { keptPagesOpen: true };
         }
-        const pages = await this.sessionPages();
+        const pages = readSessionPages(await this.pages(), this.sessionId);
         for (const page of pages) {
             try {
-                if (this.sessionId && page.sessionId === this.sessionId && page.role !== 'browser') await page.close();
-                else await page.release();
+                if (page.role !== 'browser') await page.close();
             } catch (error) {
                 if (!`${error.message || error}`.includes('No active page matches')) throw error;
             }

@@ -8,8 +8,9 @@ const readSocketUrl = (baseUrl) => {
 };
 const closeSocket = (socket) => {
     if (!socket) return;
-    socket.onerror = () => {};
-    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.close();
+    socket.on('error', () => {});
+    if (socket.readyState === WebSocket.CONNECTING) return socket.terminate();
+    if (socket.readyState === WebSocket.OPEN) socket.close();
 };
 
 export class LiveSocket {
@@ -48,6 +49,10 @@ export class LiveSocket {
         closeSocket(this.socket);
         this.sessionId = next;
         this.socket = new WebSocket(readSocketUrl(this.baseUrl));
+        this.socket.on('error', () => {
+            this.clear('Live socket error.');
+            this.emit('error', {});
+        });
         this.socket.onmessage = (event) => {
             const message = JSON.parse(`${event.data}`);
             if (message.id && this.pending.has(message.id)) return this.finish(message.id, message.result || {}, message.error || '');

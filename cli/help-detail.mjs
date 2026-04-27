@@ -17,7 +17,10 @@ Live page APIs:
   GET  /api/pages/browser     Returns all visible browser tabs as bindable pages.
   POST /api/pages/open        Body { pages, sessionId?, actions? }. Returns { sessionId, pages }.
   POST /api/pages/actions     Body { actions }. Returns { results }.
+  POST /api/pages/console     Body { pageId, limit? }. Returns buffered browser console entries.
+  POST /api/pages/events      Body { pageId, name, limit? }. Returns buffered live events like network.request or socket.
   POST /api/pages/data        Body { pageId, selector, path?, raw? }. Compact by default when large.
+  POST /api/pages/debugger    Body { pageId, action:'start'|'stop'|'evaluate', script? }. Controls Chrome debugger state or runs Runtime.evaluate.
   POST /api/pages/diff        Body { leftPageId, rightPageId, selector, path?, raw? }. Compact by default when large.
   POST /api/pages/html        Body { pageId, selector?, frameId?, index?, raw? }. Compact by default when large.
   POST /api/pages/request     Body { pageId, url?, method?, headers?, body?, auth?, credentials? }. Fetches from the extension API path.
@@ -25,7 +28,7 @@ Live page APIs:
   POST /api/pages/screenshot Body { pageId, selector?, current?, format?, quality?, maxWidth?, maxHeight?, raw? }. Returns compressed JPEG by default.
   POST /api/pages/release    Body { pageId }. Releases debugger binding without closing the tab.
   POST /api/pages/close       Body { pageId }. Returns { pageId }.
-  POST /api/pages/run         Body { script, sessionId?, pages?, args?, timeoutMs?, closeOnExit?, raw? }. Compact by default when large.
+  POST /api/pages/run         Legacy injected script route. Disabled by default; use a normal module with puppet run or node.
 
 Legacy one-shot APIs:
   POST /api/compare/routes    Body { oldBase, currentBase, routes, selectors?, artifactPath?, waitUntil?, settleMs? }. Returns compact summary and artifactPath.
@@ -38,6 +41,7 @@ CLI API equivalents:
   puppet pages active --session-id SESSION
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"click","pageId":"PAGE","selector":"button"}]}'
+  puppet pages console --json '{"pageId":"PAGE","limit":20}'
   puppet pages data --json '{"pageId":"PAGE","selector":"body"}'
   puppet pages diff --json '{"leftPageId":"LEFT","rightPageId":"RIGHT","selector":"body"}'
   puppet pages html --json '{"pageId":"PAGE","selector":"main"}'
@@ -46,7 +50,6 @@ CLI API equivalents:
   puppet pages close --json '{"pageId":"PAGE"}'
   puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard","/settings"]}'
   puppet run ./script.mjs --timeout-ms 180000
-  puppet exec --eval "const state = await server.start({port:4017}); return state.status"
   puppet configure chrome-extension://EXTENSION_ID/sidepanel.html
   puppet extension open --port 4021
   puppet api METHOD /api/path --json '{}'
@@ -62,6 +65,7 @@ SDK browser helpers and returns:
   browser.newPage(url?, options?) -> Page. Reuses a controlled page unless newTab or reuse:false is passed.
   browser.pages() -> Page[] for visible tabs. browser.sessionPages() -> Page[] for all bindable Chrome pages.
   browser.close() -> closes current-session Puppet tabs, releases other debugger bindings, and clears live socket state. browser.close({ keepPagesOpen:true }) leaves tabs open.
+  puppet run ./script.mjs -> runs a normal Node module file with PUPPET_PORT and PUPPET_SERVER_URL in env. Inline eval is disabled.
 
 SDK page helpers and returns:
   page.goto(url, options?), page.back(options?), page.reload(options?), page.setViewport(size) -> public page metadata.
@@ -75,12 +79,16 @@ SDK page helpers and returns:
   page.click/type/select/scroll/MouseScroll/submit/hover/dblclick/dragAndDrop -> action result data.
   page.keyboard.press(key) -> { key }.
   page.evaluate(fnOrScript, ...args) -> escape hatch for browser globals and non-DOM page context.
+  page.debugger.start()/stop() -> attaches or detaches the Chrome debugger for testing flows.
   page.html(selector?) -> { ok, pageId, html, selector, url }.
   page.data(selector, { compact }) -> selector detail. Snapshot output is hard disabled.
+  page.console.read({ limit? }), page.console.on(handler), page.console.write(script) -> debugger-backed console helpers.
+  page.consoleMessages({ limit? }) -> buffered browser console entries. page.waitForConsole(match, { timeoutMs? }) -> next matching console entry.
   page.screenshot({ path?, selector?, current?, format?, quality?, maxWidth?, maxHeight? }) -> compressed JPEG by default; writes path and omits base64 unless raw:true is passed.
   page.compare(page2, options?) and page.compareSelector(selector, page2.selectorTree(selector), options?) -> compare result.
   page.frames(), page.iframes() -> frame metadata array. page.frame(frameId), page.iframe[frameId] -> frame-scoped Page.
-  page.request(options), page.request.fetch(url, options) -> API-backed HTTP response data from current session context.
+  page.request(options), page.request.fetch(url, options), page.request.on(handler) -> page-context HTTP helpers and live request stream.
+  page.network.requests({ limit? }), page.network.socket({ limit? }), page.socket.on(handler) -> buffered or live debugger network/socket events.
   page.graphql(query, options) -> GraphQL response data.
   page.localStorage.get/set/remove/all -> localStorage values.
 
@@ -106,7 +114,6 @@ Network helpers:
 Output rules:
   Use puppet compare routes for broad old-vs-current UI route checks. It returns per-route body/count/style summary keys and writes full details to artifactPath.
   Large REST/CLI payloads return { compact:true, summary, artifact }. Read artifact.path only when a full payload is truly needed.
-  SDK helpers request raw data internally so scripts can inspect data; /api/pages/run compacts the final returned value by default.
   Prefer page.querySelector/querySelectorAll/find, page.$$eval, locator scoped queries, locator.all/map, and locator child action helpers for DOM work; keep page.evaluate() for browser globals and non-DOM escape hatches.
   classes, diff.classes_diff, diff.styles_diff, tree styles, and tree diff styles are key-value objects.
   snapshot is always omitted because snapshot output is hard disabled.

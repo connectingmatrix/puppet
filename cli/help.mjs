@@ -14,7 +14,6 @@ Usage:
   puppet compare routes --json '{"oldBase":"http://127.0.0.1:64925","currentBase":"http://127.0.0.1:5001","routes":["/dashboard"]}'
   puppet run ./script.mjs [--port 4017] [--timeout-ms 120000]
   puppet run ./script.mjs --keep-pages-open
-  puppet exec --eval "const state = await server.start(); return state.status"
   puppet api GET /api/health
   puppet api POST /api/pages/data --json '{"pageId":"...","selector":"body"}'
   puppet help detail
@@ -41,6 +40,7 @@ Commands:
   puppet pages active [--session-id SESSION]
   puppet pages browser
   puppet pages actions --json '{"actions":[{"type":"scroll","pageId":"...","deltaY":800}]}'
+  puppet pages console --json '{"pageId":"...","limit":20}'
   puppet pages data --json '{"pageId":"...","selector":"body"}'
   puppet pages diff --json '{"leftPageId":"...","rightPageId":"...","selector":"body"}'
   puppet pages html --json '{"pageId":"...","selector":"main"}'; puppet pages screenshot --json '{"pageId":"...","path":"/tmp/shot.jpg"}'
@@ -56,24 +56,18 @@ Action array example:
 
 const run = `Puppet script execution
 
-Run a server-side SDK script:
+Run a normal Node module that imports puppet:
   puppet run ./inspect.mjs --timeout-ms 180000
-  puppet exec --eval "const state = await server.start({port:4017}); return state.status"
-
-Script scope:
-  args      Array passed in the JSON body.
-  browser   Active browser object when connected.
-  server    Object with start() and stop().
-  console   Captured console object returned in logs.
 
 Sample script:
-  const state = await server.start({ port: 4017 });
+  import puppet from 'puppet';
+  const state = await puppet.start({ port: Number(process.env.PUPPET_PORT || 4017) });
   if (!state.browser) throw new Error('Puppet not ready: ' + state.status);
   const page = await state.browser.newPage('https://example.com');
   await page.waitForSelector('body');
   const link = await page.find('a', (node) => Boolean(node.href));
-  const [body] = await page.locator('body').map((node) => ({ title: document.title, text: node.innerText.slice(0, 200) }));
-  return { ...body, hasLink: Boolean(link) };`;
+  const text = await page.locator('body').map((node) => node.innerText.slice(0, 200));
+  console.log(JSON.stringify({ hasLink: Boolean(link), text: text[0] || '' }, null, 2));`;
 
 const compare = `Puppet compare and inspect
 

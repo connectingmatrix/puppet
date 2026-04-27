@@ -57,6 +57,12 @@ export interface PageDataPayload {
     snapshot?: boolean;
 }
 
+export interface PageDebuggerPayload {
+    action?: string;
+    pageId: string;
+    script?: string;
+}
+
 export interface PageDiffPayload {
     leftPageId: string;
     path?: string;

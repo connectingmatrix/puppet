@@ -48,7 +48,7 @@ export const closeLiveSessionPage = async (pageId: string, emit: LiveEmit) => {
 };
 export const releaseLivePage = async (pageId: string, emit: LiveEmit) => {
     const page = readPage(pageId);
-    await closeDebugTab(page.tabId || 0);
+    await closeDebugTab(page.tabId || 0, true);
     dropLivePage(pageId);
     emit('page.closed', { pageId, sessionId: page.sessionId }, page.sessionId);
     return { pageId };

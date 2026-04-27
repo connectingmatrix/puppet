@@ -89,6 +89,6 @@ export const readTabMeta = async (tabId: number) => {
 
 export const closePageTab = async (tabId: number) => {
     dropInterceptRules(tabId);
-    await closeDebugTab(tabId);
+    await closeDebugTab(tabId, true);
     await chrome.tabs.remove(tabId);
 };

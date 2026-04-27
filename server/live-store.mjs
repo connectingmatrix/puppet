@@ -1,3 +1,5 @@
+import { dropPageEvents, keepPageEvent, savePageEvent } from './page-events.mjs';
+
 const pages = new Map();
 const subscribers = new Map();
 
@@ -22,6 +24,7 @@ export const savePage = (page) => {
 
 export const dropPage = (pageId) => {
     pages.delete(pageId);
+    dropPageEvents(pageId);
 };
 
 export const readLivePage = (pageId = '') => readPage(pageId);
@@ -32,6 +35,7 @@ export const emitLive = (name, data = {}, sessionId = '') => {
 };
 
 export const syncLiveEvent = (name, data = {}, sessionId = '') => {
+    if (data.pageId && keepPageEvent(name)) savePageEvent(data.pageId, name, data);
     if (name === 'page.opened' || name === 'page.navigated' || name === 'page.reloaded' || name === 'page.resized') savePage(data);
     if (name === 'page.closed') dropPage(data.pageId || '');
     if (name === 'record.started' || name === 'record.stopped') {
